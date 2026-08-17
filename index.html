@@ -594,77 +594,16 @@
     <div id="toast-container"></div>
 
     <script>
-        // ========================================
-        // KONFIGURACJA SUPABASE
-        // Wklej tutaj URL projektu i anon/public key
-        // ========================================
         const SUPABASE_URL = "https://ttgeuikoyfcgiboajhcf.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4";
 
-        /*
-        INSTRUKCJA URUCHOMIENIA:
-        1. Utwórz projekt Supabase.
-        2. Skopiuj Project URL i anon key do zmiennych wyżej.
-        3. Uruchom poniższy SQL w Supabase SQL Editor.
-        4. Zapisz plik jako index.html i wgraj na GitHub (włącz GitHub Pages).
-        
-        ========== SQL DO WYKONANIA W SUPABASE ==========
-        
-        -- Włącz rozszerzenie UUID
-        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
-        -- Tabele
-        CREATE TABLE profiles ( id UUID REFERENCES auth.users NOT NULL PRIMARY KEY, email TEXT, display_name TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE nutrition_goals ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, calories INT, protein INT, carbs INT, fat INT, fiber INT, water INT, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE meals ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, meal_date DATE NOT NULL, meal_time TIME, meal_type TEXT, name TEXT, calories FLOAT, protein FLOAT, carbs FLOAT, fat FLOAT, fiber FLOAT, grams INT, notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE products ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, name TEXT NOT NULL, calories FLOAT, protein FLOAT, carbs FLOAT, fat FLOAT, fiber FLOAT, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE water_logs ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, log_date DATE NOT NULL, amount_ml INT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE weight_logs ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, log_date DATE NOT NULL, weight FLOAT NOT NULL, notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE workouts ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, workout_date DATE NOT NULL, start_time TIME, duration_minutes INT, name TEXT, workout_type TEXT, status TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE exercises ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, name TEXT NOT NULL, muscle_group TEXT, description TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE workout_exercises ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), workout_id UUID REFERENCES workouts ON DELETE CASCADE, exercise_id UUID REFERENCES exercises, exercise_order INT, created_at TIMESTAMPTZ DEFAULT NOW() );
-        CREATE TABLE workout_sets ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), workout_exercise_id UUID REFERENCES workout_exercises ON DELETE CASCADE, set_number INT, weight FLOAT, repetitions INT, completed BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ DEFAULT NOW() );
-
-        -- RLS Policies
-        ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE nutrition_goals ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE meals ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE water_logs ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE weight_logs ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE workouts ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE exercises ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE workout_exercises ENABLE ROW LEVEL SECURITY;
-        ALTER TABLE workout_sets ENABLE ROW LEVEL SECURITY;
-
-        -- Helper policy function
-        CREATE OR REPLACE FUNCTION set_user_rls() RETURNS void AS $$ BEGIN END; $$ LANGUAGE plpgsql;
-        
-        DO $$ DECLARE t TEXT; BEGIN
-            FOR t IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LOOP
-                EXECUTE format('CREATE POLICY "ALL_FOR_OWNER" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t);
-            END LOOP;
-        END $$;
-        -- Wyjątki dla relacyjnych (workout_exercises, workout_sets łączą się przez workout)
-        DROP POLICY IF EXISTS "ALL_FOR_OWNER" ON workout_exercises;
-        CREATE POLICY "ALL_FOR_OWNER" ON workout_exercises FOR ALL USING ( workout_id IN (SELECT id FROM workouts WHERE user_id = auth.uid()) );
-        DROP POLICY IF EXISTS "ALL_FOR_OWNER" ON workout_sets;
-        CREATE POLICY "ALL_FOR_OWNER" ON workout_sets FOR ALL USING ( workout_exercise_id IN (SELECT id FROM workout_exercises WHERE workout_id IN (SELECT id FROM workouts WHERE user_id = auth.uid())) );
-        
-        -- Trigger dla profiles
-        CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger AS $$
-        BEGIN INSERT INTO public.profiles (id, email) VALUES (new.id, new.email); RETURN new; END;
-        $$ LANGUAGE plpgsql SECURITY DEFINER;
-        CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-        =================================================
-        */
-
-                // --- Inicjalizacja Supabase ---
-        let supabase = null;
+        // --- Inicjalizacja Supabase ---
+        // ZMIANA Z 'let supabase' na 'let supabaseClient' 
+        // Aby uniknąć konfliktu zmiennych tworzonych przez <script> w sekcji head.
+        let supabaseClient = null;
         try {
-            // Bezpieczniejsza inicjalizacja, zapobiega zablokowaniu całej aplikacji, gdy CDN zawiedzie
-            if (window.supabase && SUPABASE_URL !== "TU_WKLEJ_SUPABASE_URL") {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            if (window.supabase) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
         } catch(e) {
             console.error("Błąd konfiguracji Supabase:", e);
@@ -690,14 +629,19 @@
         const val = id => $(id) ? $(id).value : null;
         const setVal = (id, v) => { if($(id)) $(id).value = v; };
         const html = (id, h) => { if($(id)) $(id).innerHTML = h; };
-        const formatDate = d => d.toISOString().split('T')[0];
+        
+        // Zabezpieczenie przed błędami strefy czasowej
+        const formatDate = d => {
+            const offset = d.getTimezoneOffset() * 60000;
+            return new Date(d.getTime() - offset).toISOString().split('T')[0];
+        };
         
         function showToast(msg, type = 'success') {
             const t = document.createElement('div');
             t.className = `toast ${type}`;
             t.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i> ${msg}`;
             $('toast-container').appendChild(t);
-            if (window.lucide) lucide.createIcons(); // Dodane zabezpieczenie
+            if (window.lucide) lucide.createIcons();
             setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3000);
         }
 
@@ -711,20 +655,19 @@
 
         async function handleAuth(e) {
             e.preventDefault();
-            if (!supabase) return alert("Skonfiguruj Supabase w kodzie lub wyłącz blokera reklam (AdBlock)!");
+            if (!supabaseClient) return alert("Brak połączenia z Supabase. Sprawdź blokery reklam (AdBlock) lub dostęp do internetu!");
             const email = val('auth-email'), password = val('auth-password');
             $('global-loader').style.display = 'flex';
             
             let error;
             if (isLoginMode) {
-                const res = await supabase.auth.signInWithPassword({ email, password });
+                const res = await supabaseClient.auth.signInWithPassword({ email, password });
                 error = res.error;
-                // KLUCZOWA POPRAWKA: Przypisanie użytkownika do stanu aplikacji zaraz po pomyślnym zalogowaniu!
                 if (res.data && res.data.session) {
                     state.user = res.data.session.user;
                 }
             } else {
-                const res = await supabase.auth.signUp({ email, password });
+                const res = await supabaseClient.auth.signUp({ email, password });
                 error = res.error;
                 if (!error) showToast("Konto utworzone! Zaloguj się.");
             }
@@ -735,21 +678,20 @@
         }
 
         async function logout() {
-            if (supabase) await supabase.auth.signOut();
+            if (supabaseClient) await supabaseClient.auth.signOut();
             location.reload();
         }
 
         // --- Nawigacja i Inicjalizacja ---
         async function checkSession() {
-            if (!supabase) {
+            if (!supabaseClient) {
                 hide('global-loader');
                 showToast("Błąd ładownia bazy danych. Sprawdź połączenie z internetem.", "error");
                 return;
             }
             
             try {
-                // Bezpieczniejszy odczyt sesji
-                const { data, error } = await supabase.auth.getSession();
+                const { data, error } = await supabaseClient.auth.getSession();
                 if (data && data.session) {
                     state.user = data.session.user;
                     initApp();
@@ -769,7 +711,6 @@
             show('app');
             $('global-loader').style.display = 'flex';
             
-            // KLUCZOWA POPRAWKA: Upewniamy się, że użytkownik faktycznie istnieje przed wyciągnięciem adresu e-mail
             if (state.user && state.user.email) {
                 html('user-display-name', state.user.email.split('@')[0]);
             } else {
@@ -792,7 +733,7 @@
             
             $('global-loader').style.display = 'none';
             navigate('dashboard');
-            if (window.lucide) lucide.createIcons(); // Zabezpieczenie przed brakiem Lucide
+            if (window.lucide) lucide.createIcons();
         }
 
         function toggleSidebar() {
@@ -810,7 +751,6 @@
             
             updateDateDisplay();
             
-            // View specific logic
             if(view === 'dashboard') loadDashboard();
             if(view === 'calendar') renderCalendar();
             if(view === 'diet') { setVal('diet-date-picker', formatDate(state.date)); loadDietForDate(formatDate(state.date)); }
@@ -840,10 +780,10 @@
         // --- API & Logika ---
         
         async function loadGoals() {
-            const { data } = await supabase.from('nutrition_goals').select('*').eq('user_id', state.user.id).single();
+            const { data } = await supabaseClient.from('nutrition_goals').select('*').eq('user_id', state.user.id).single();
             if (data) state.goals = data;
             else {
-                await supabase.from('nutrition_goals').insert([{ user_id: state.user.id, ...state.goals }]);
+                await supabaseClient.from('nutrition_goals').insert([{ user_id: state.user.id, ...state.goals }]);
             }
         }
 
@@ -860,7 +800,7 @@
                 carbs: parseInt(val('goal-carbs')), fat: parseInt(val('goal-fat')),
                 fiber: parseInt(val('goal-fiber')), water: parseInt(val('goal-water'))
             };
-            const { error } = await supabase.from('nutrition_goals').update(payload).eq('user_id', state.user.id);
+            const { error } = await supabaseClient.from('nutrition_goals').update(payload).eq('user_id', state.user.id);
             if (!error) {
                 state.goals = { ...state.goals, ...payload };
                 showToast("Cele zaktualizowane");
@@ -871,8 +811,7 @@
         async function loadDashboard() {
             const todayStr = formatDate(state.date);
             
-            // Fetch today's meals
-            const { data: meals } = await supabase.from('meals').select('*').eq('meal_date', todayStr).eq('user_id', state.user.id);
+            const { data: meals } = await supabaseClient.from('meals').select('*').eq('meal_date', todayStr).eq('user_id', state.user.id);
             let kc = 0, p = 0, c = 0, f = 0;
             let mealsHtml = '';
             (meals || []).forEach(m => {
@@ -882,7 +821,6 @@
             if(!mealsHtml) mealsHtml = '<div class="text-secondary text-sm">Brak posiłków.</div>';
             html('dash-meals-list', mealsHtml);
 
-            // Update Progress
             const updateProg = (id, current, goal, elBar) => {
                 html(`${id}-current`, Math.round(current)); html(`${id}-goal`, goal);
                 let pct = Math.min((current/goal)*100, 100) || 0;
@@ -895,8 +833,7 @@
             updateProg('dash-carbs', c, state.goals.carbs, 'dash-carbs-bar');
             updateProg('dash-fat', f, state.goals.fat, 'dash-fat-bar');
 
-            // Fetch today's workout
-            const { data: workouts } = await supabase.from('workouts').select('*').eq('workout_date', todayStr).eq('user_id', state.user.id);
+            const { data: workouts } = await supabaseClient.from('workouts').select('*').eq('workout_date', todayStr).eq('user_id', state.user.id);
             if(workouts && workouts.length > 0) {
                 let w = workouts[0];
                 let statCol = w.status === 'completed' ? 'var(--success)' : 'var(--warning)';
@@ -914,7 +851,7 @@
 
         // Products
         async function loadProducts() {
-            const { data } = await supabase.from('products').select('*').eq('user_id', state.user.id);
+            const { data } = await supabaseClient.from('products').select('*').eq('user_id', state.user.id);
             state.products = data || [];
             updateProductSelects();
         }
@@ -934,7 +871,7 @@
                     <td><button onclick="deleteProduct('${p.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i></button></td>
                 </tr>
             `).join(''));
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         }
         async function saveProduct(e) {
             e.preventDefault();
@@ -943,12 +880,12 @@
                 calories: parseFloat(val('prod-kcal')), protein: parseFloat(val('prod-protein')),
                 carbs: parseFloat(val('prod-carbs')), fat: parseFloat(val('prod-fat')), fiber: parseFloat(val('prod-fiber'))
             };
-            const { data, error } = await supabase.from('products').insert([p]).select();
+            const { data, error } = await supabaseClient.from('products').insert([p]).select();
             if(!error) { state.products.push(data[0]); renderProducts(); updateProductSelects(); closeModal('modal-product'); showToast('Produkt dodany'); }
         }
         async function deleteProduct(id) {
             if(!confirm("Usunąć produkt?")) return;
-            await supabase.from('products').delete().eq('id', id);
+            await supabaseClient.from('products').delete().eq('id', id);
             state.products = state.products.filter(p => p.id !== id);
             renderProducts(); updateProductSelects(); showToast("Usunięto");
         }
@@ -986,15 +923,15 @@
                 carbs: parseFloat(val('meal-carbs')), fat: parseFloat(val('meal-fat')), fiber: parseFloat(val('meal-fiber')),
                 notes: val('meal-notes')
             };
-            const { error } = await supabase.from('meals').insert([m]);
+            const { error } = await supabaseClient.from('meals').insert([m]);
             if(!error) { closeModal('modal-meal'); showToast("Posiłek zapisany"); if($('view-diet').classList.contains('hidden')===false) loadDietForDate(val('meal-date')); if($('view-dashboard').classList.contains('hidden')===false) loadDashboard(); }
         }
         async function loadDietForDate(dateStr) {
             setVal('diet-date-picker', dateStr);
             html('diet-date-label', dateStr === formatDate(new Date()) ? 'Dzisiaj' : dateStr);
-            setVal('meal-date', dateStr); // Pre-fill modal
+            setVal('meal-date', dateStr); 
             
-            const { data } = await supabase.from('meals').select('*').eq('meal_date', dateStr).eq('user_id', state.user.id).order('meal_time');
+            const { data } = await supabaseClient.from('meals').select('*').eq('meal_date', dateStr).eq('user_id', state.user.id).order('meal_time');
             let kc=0, p=0, c=0, f=0;
             let list = '';
             (data||[]).forEach(m => {
@@ -1024,18 +961,18 @@
                 <div class="card text-center"><div class="text-secondary text-sm">Węgle</div><div class="text-lg">${Math.round(c)} / ${state.goals.carbs}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(c, state.goals.carbs)}%"></div></div></div>
                 <div class="card text-center"><div class="text-secondary text-sm">Tłuszcze</div><div class="text-lg">${Math.round(f)} / ${state.goals.fat}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(f, state.goals.fat)}%"></div></div></div>
             `);
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         }
         async function deleteMeal(id, dateStr) {
             if(!confirm("Usunąć?")) return;
-            await supabase.from('meals').delete().eq('id', id);
+            await supabaseClient.from('meals').delete().eq('id', id);
             loadDietForDate(dateStr); showToast("Usunięto");
         }
 
         // Water
         async function loadWaterForDate(dateStr) {
             html('water-date-label', dateStr === formatDate(new Date()) ? 'Dzisiaj' : dateStr);
-            const { data } = await supabase.from('water_logs').select('*').eq('log_date', dateStr).eq('user_id', state.user.id);
+            const { data } = await supabaseClient.from('water_logs').select('*').eq('log_date', dateStr).eq('user_id', state.user.id);
             let total = 0;
             (data||[]).forEach(w => total += w.amount_ml);
             updateWaterUI(total);
@@ -1050,14 +987,14 @@
         }
         async function addWater(amount) {
             const todayStr = formatDate(state.date);
-            const { error } = await supabase.from('water_logs').insert([{ user_id: state.user.id, log_date: todayStr, amount_ml: amount }]);
+            const { error } = await supabaseClient.from('water_logs').insert([{ user_id: state.user.id, log_date: todayStr, amount_ml: amount }]);
             if(!error) { updateWaterUI(state.water + amount); showToast(`Dodano ${amount}ml`); }
         }
 
         // Workouts
         async function loadWorkoutsView() {
             setVal('wo-date', formatDate(state.date));
-            const { data } = await supabase.from('workouts').select('*').eq('user_id', state.user.id).order('workout_date', { ascending: false });
+            const { data } = await supabaseClient.from('workouts').select('*').eq('user_id', state.user.id).order('workout_date', { ascending: false });
             const today = formatDate(new Date());
             
             const upcoming = (data||[]).filter(w => w.workout_date >= today && w.status !== 'completed');
@@ -1075,7 +1012,7 @@
             
             html('workouts-upcoming-list', renderWList(upcoming));
             html('workouts-history-list', renderWList(history));
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         }
         async function saveWorkout(e) {
             e.preventDefault();
@@ -1084,13 +1021,13 @@
                 start_time: val('wo-time') || null, workout_type: val('wo-type'),
                 duration_minutes: parseInt(val('wo-duration')) || null, status: val('wo-status')
             };
-            const { error } = await supabase.from('workouts').insert([w]);
+            const { error } = await supabaseClient.from('workouts').insert([w]);
             if(!error) { closeModal('modal-workout'); showToast("Trening zapisany"); loadWorkoutsView(); }
         }
 
         // Exercises DB
         async function loadExercises() {
-            const { data } = await supabase.from('exercises').select('*').eq('user_id', state.user.id);
+            const { data } = await supabaseClient.from('exercises').select('*').eq('user_id', state.user.id);
             state.exercises = data || [];
         }
         function renderExercises() {
@@ -1104,7 +1041,7 @@
                     <button class="btn btn-outline btn-sm mt-2" onclick="deleteExercise('${e.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i> Usuń</button>
                 </div>
             `).join(''));
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
             
             const sel = $('exec-add-exercise-select');
             if(sel) {
@@ -1114,12 +1051,12 @@
         async function saveExercise(e) {
             e.preventDefault();
             const ex = { user_id: state.user.id, name: val('ex-name'), muscle_group: val('ex-muscle'), description: val('ex-desc') };
-            const { data, error } = await supabase.from('exercises').insert([ex]).select();
+            const { data, error } = await supabaseClient.from('exercises').insert([ex]).select();
             if(!error) { state.exercises.push(data[0]); renderExercises(); closeModal('modal-exercise'); showToast("Zapisano ćwiczenie"); }
         }
         async function deleteExercise(id) {
             if(!confirm("Usunąć ćwiczenie?")) return;
-            await supabase.from('exercises').delete().eq('id', id);
+            await supabaseClient.from('exercises').delete().eq('id', id);
             state.exercises = state.exercises.filter(e => e.id !== id);
             renderExercises(); showToast("Usunięto");
         }
@@ -1130,7 +1067,7 @@
             openModal('modal-execute-workout');
             html('exec-wo-exercises', '<div class="text-center p-4"><div class="spinner"></div></div>');
             
-            const { data: wo } = await supabase.from('workouts').select('*').eq('id', id).single();
+            const { data: wo } = await supabaseClient.from('workouts').select('*').eq('id', id).single();
             if(wo) html('exec-wo-title', `Trening: ${wo.name}`);
             
             loadWorkoutExercises();
@@ -1138,17 +1075,15 @@
         
         async function loadWorkoutExercises() {
             if(!currentActiveWorkoutId) return;
-            // Fetch mapping
-            const { data: weList } = await supabase.from('workout_exercises').select('*, exercises(*)').eq('workout_id', currentActiveWorkoutId).order('exercise_order');
+            const { data: weList } = await supabaseClient.from('workout_exercises').select('*, exercises(*)').eq('workout_id', currentActiveWorkoutId).order('exercise_order');
             
             if(!weList || weList.length === 0) {
                 html('exec-wo-exercises', '<p class="text-secondary text-center p-4">Brak dodanych ćwiczeń. Wybierz ćwiczenie z listy powyżej.</p>');
                 return;
             }
 
-            // Fetch sets
             const weIds = weList.map(w => w.id);
-            const { data: sets } = await supabase.from('workout_sets').select('*').in('workout_exercise_id', weIds).order('set_number');
+            const { data: sets } = await supabaseClient.from('workout_sets').select('*').in('workout_exercise_id', weIds).order('set_number');
             
             let h = '';
             weList.forEach((we, idx) => {
@@ -1182,19 +1117,18 @@
                 </div>`;
             });
             html('exec-wo-exercises', h);
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
         }
 
         async function addExerciseToWorkout() {
             const eid = val('exec-add-exercise-select');
             if(!eid || !currentActiveWorkoutId) return;
-            const { data: countData } = await supabase.from('workout_exercises').select('id', { count: 'exact' }).eq('workout_id', currentActiveWorkoutId);
+            const { data: countData } = await supabaseClient.from('workout_exercises').select('id', { count: 'exact' }).eq('workout_id', currentActiveWorkoutId);
             const order = (countData?.length || 0) + 1;
             
-            const { data, error } = await supabase.from('workout_exercises').insert([{ workout_id: currentActiveWorkoutId, exercise_id: eid, exercise_order: order }]).select();
+            const { data, error } = await supabaseClient.from('workout_exercises').insert([{ workout_id: currentActiveWorkoutId, exercise_id: eid, exercise_order: order }]).select();
             if(!error) {
-                // Auto add 1 set
-                await supabase.from('workout_sets').insert([{ workout_exercise_id: data[0].id, set_number: 1, weight: 0, repetitions: 0 }]);
+                await supabaseClient.from('workout_sets').insert([{ workout_exercise_id: data[0].id, set_number: 1, weight: 0, repetitions: 0 }]);
                 loadWorkoutExercises();
                 setVal('exec-add-exercise-select', '');
             }
@@ -1202,12 +1136,12 @@
         
         async function removeWorkoutExercise(weId) {
             if(!confirm("Usunąć to ćwiczenie z treningu?")) return;
-            await supabase.from('workout_exercises').delete().eq('id', weId);
+            await supabaseClient.from('workout_exercises').delete().eq('id', weId);
             loadWorkoutExercises();
         }
 
         async function addSet(weId, num) {
-            await supabase.from('workout_sets').insert([{ workout_exercise_id: weId, set_number: num, weight: 0, repetitions: 0 }]);
+            await supabaseClient.from('workout_sets').insert([{ workout_exercise_id: weId, set_number: num, weight: 0, repetitions: 0 }]);
             loadWorkoutExercises();
         }
 
@@ -1215,13 +1149,13 @@
             const w = parseFloat(val(`w-${setId}`)) || 0;
             const r = parseInt(val(`r-${setId}`)) || 0;
             const c = $(`c-${setId}`).checked;
-            await supabase.from('workout_sets').update({ weight: w, repetitions: r, completed: c }).eq('id', setId);
-            if(c) startTimer(90); // Auto start timer on set complete
+            await supabaseClient.from('workout_sets').update({ weight: w, repetitions: r, completed: c }).eq('id', setId);
+            if(c) startTimer(90); 
         }
 
         async function completeWorkout() {
             if(!currentActiveWorkoutId) return;
-            await supabase.from('workouts').update({ status: 'completed' }).eq('id', currentActiveWorkoutId);
+            await supabaseClient.from('workouts').update({ status: 'completed' }).eq('id', currentActiveWorkoutId);
             showToast("Trening zakończony! Dobra robota!");
             closeModal('modal-execute-workout');
             loadWorkoutsView();
@@ -1245,7 +1179,6 @@
                 if(timeLeft <= 0) {
                     stopTimer();
                     showToast("Koniec przerwy! Wracaj do ćwiczeń.", "warning");
-                    // Opcjonalnie zagraj dźwięk (pomijamy dla uproszczenia)
                 }
             }, 1000);
         }
@@ -1290,11 +1223,10 @@
             const start = `${year}-${(month+1).toString().padStart(2,'0')}-01`;
             const end = `${year}-${(month+1).toString().padStart(2,'0')}-31`;
             
-            // Promise all to fetch monthly data
             const [mealsReq, workoutsReq, waterReq] = await Promise.all([
-                supabase.from('meals').select('meal_date, calories').eq('user_id', state.user.id).gte('meal_date', start).lte('meal_date', end),
-                supabase.from('workouts').select('workout_date, status').eq('user_id', state.user.id).gte('workout_date', start).lte('workout_date', end),
-                supabase.from('water_logs').select('log_date, amount_ml').eq('user_id', state.user.id).gte('log_date', start).lte('log_date', end)
+                supabaseClient.from('meals').select('meal_date, calories').eq('user_id', state.user.id).gte('meal_date', start).lte('meal_date', end),
+                supabaseClient.from('workouts').select('workout_date, status').eq('user_id', state.user.id).gte('workout_date', start).lte('workout_date', end),
+                supabaseClient.from('water_logs').select('log_date, amount_ml').eq('user_id', state.user.id).gte('log_date', start).lte('log_date', end)
             ]);
             
             const dataMap = {};
@@ -1347,11 +1279,10 @@
             html('day-modal-body', `<div class="text-center p-4"><div class="spinner"></div></div>`);
             openModal('modal-day');
             
-            // Fetch day summary
             Promise.all([
-                supabase.from('meals').select('*').eq('meal_date', dateStr).eq('user_id', state.user.id),
-                supabase.from('workouts').select('*').eq('workout_date', dateStr).eq('user_id', state.user.id),
-                supabase.from('water_logs').select('*').eq('log_date', dateStr).eq('user_id', state.user.id)
+                supabaseClient.from('meals').select('*').eq('meal_date', dateStr).eq('user_id', state.user.id),
+                supabaseClient.from('workouts').select('*').eq('workout_date', dateStr).eq('user_id', state.user.id),
+                supabaseClient.from('water_logs').select('*').eq('log_date', dateStr).eq('user_id', state.user.id)
             ]).then(([m, w, wt]) => {
                 let kc=0; (m.data||[]).forEach(x=>kc+=x.calories);
                 let water=0; (wt.data||[]).forEach(x=>water+=x.amount_ml);
@@ -1376,16 +1307,15 @@
 
         // Weight
         async function loadWeight() {
-            const { data } = await supabase.from('weight_logs').select('*').eq('user_id', state.user.id).order('log_date', { ascending: true });
+            const { data } = await supabaseClient.from('weight_logs').select('*').eq('user_id', state.user.id).order('log_date', { ascending: true });
             state.weight = data || [];
             
             html('weight-history-body', state.weight.map(w => `
                 <tr><td>${w.log_date}</td><td><strong>${w.weight} kg</strong></td><td>${w.notes||''}</td>
                 <td><button onclick="deleteWeight('${w.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i></button></td></tr>
             `).reverse().join(''));
-            lucide.createIcons();
+            if(window.lucide) lucide.createIcons();
             
-            // Chart
             if(state.charts.weight) state.charts.weight.destroy();
             const ctx = document.getElementById('weightChart').getContext('2d');
             state.charts.weight = new Chart(ctx, {
@@ -1400,12 +1330,12 @@
         async function saveWeight(e) {
             e.preventDefault();
             const payload = { user_id: state.user.id, log_date: val('weight-date'), weight: parseFloat(val('weight-val')), notes: val('weight-notes') };
-            const { error } = await supabase.from('weight_logs').insert([payload]);
+            const { error } = await supabaseClient.from('weight_logs').insert([payload]);
             if(!error) { closeModal('modal-weight'); showToast("Zapisano wagę"); loadWeight(); }
         }
         async function deleteWeight(id) {
             if(!confirm("Usunąć?")) return;
-            await supabase.from('weight_logs').delete().eq('id', id);
+            await supabaseClient.from('weight_logs').delete().eq('id', id);
             loadWeight(); showToast("Usunięto");
         }
 
@@ -1416,9 +1346,8 @@
             const start = new Date(); start.setDate(end.getDate() - days);
             const startStr = formatDate(start); const endStr = formatDate(end);
             
-            const { data: meals } = await supabase.from('meals').select('meal_date, calories, protein, carbs, fat').eq('user_id', state.user.id).gte('meal_date', startStr).lte('meal_date', endStr);
+            const { data: meals } = await supabaseClient.from('meals').select('meal_date, calories, protein, carbs, fat').eq('user_id', state.user.id).gte('meal_date', startStr).lte('meal_date', endStr);
             
-            // Group by date
             const grouped = {};
             (meals||[]).forEach(m => {
                 if(!grouped[m.meal_date]) grouped[m.meal_date] = { k:0, p:0, c:0, f:0 };
@@ -1443,7 +1372,6 @@
                 }
             });
 
-            // Avg Macros
             let avgP = 0, avgC = 0, avgF = 0;
             const daysCount = labels.length || 1;
             labels.forEach(d => { avgP += grouped[d].p; avgC += grouped[d].c; avgF += grouped[d].f; });
@@ -1465,9 +1393,8 @@
             localStorage.setItem('theme', theme);
         }
         
-                function exportData() {
-            // Simplified CSV export of meals
-            supabase.from('meals').select('*').eq('user_id', state.user.id).then(({ data, error }) => {
+        function exportData() {
+            supabaseClient.from('meals').select('*').eq('user_id', state.user.id).then(({ data, error }) => {
                 if (error) {
                     showToast("Błąd pobierania danych", "error");
                     return;
@@ -1479,16 +1406,13 @@
 
         async function deleteAccount() {
             if(!confirm("CZY NA PEWNO CHCESZ USUNĄĆ KONTO? Te operacja jest nieodwracalna!")) return;
-            // Wymaga konfiguracji w Supabase (RPC lub rls/cascade).
             alert("Funkcja usuwania konta musi zostać potwierdzona e-mailem. (Wymaga konfiguracji w panelu Supabase)");
         }
 
         // ==========================================
         // START APLIKACJI
         // ==========================================
-        // To wywołanie zdejmuje ekran ładowania i sprawdza sesję
         document.addEventListener('DOMContentLoaded', () => {
-            // Setup default dates in forms
             const today = formatDate(new Date());
             setVal('meal-date', today);
             setVal('weight-date', today);
