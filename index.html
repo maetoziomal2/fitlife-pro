@@ -659,10 +659,15 @@
         =================================================
         */
 
-        // --- Inicjalizacja Supabase ---
-        let supabase;
-        if (SUPABASE_URL !== "TU_WKLEJ_SUPABASE_URL") {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                // --- Inicjalizacja Supabase ---
+        let supabase = null;
+        try {
+            // Bezpieczniejsza inicjalizacja, zapobiega zablokowaniu całej aplikacji, gdy CDN zawiedzie
+            if (window.supabase && SUPABASE_URL !== "TU_WKLEJ_SUPABASE_URL") {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch(e) {
+            console.error("Błąd konfiguracji Supabase:", e);
         }
 
         // --- Stan Aplikacji ---
@@ -692,7 +697,7 @@
             t.className = `toast ${type}`;
             t.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i> ${msg}`;
             $('toast-container').appendChild(t);
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons(); // Dodane zabezpieczenie
             setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3000);
         }
 
@@ -706,7 +711,7 @@
 
         async function handleAuth(e) {
             e.preventDefault();
-            if (!supabase) return alert("Skonfiguruj Supabase w kodzie!");
+            if (!supabase) return alert("Skonfiguruj Supabase w kodzie lub wyłącz blokera reklam (AdBlock)!");
             const email = val('auth-email'), password = val('auth-password');
             $('global-loader').style.display = 'flex';
             
@@ -714,6 +719,10 @@
             if (isLoginMode) {
                 const res = await supabase.auth.signInWithPassword({ email, password });
                 error = res.error;
+                // KLUCZOWA POPRAWKA: Przypisanie użytkownika do stanu aplikacji zaraz po pomyślnym zalogowaniu!
+                if (res.data && res.data.session) {
+                    state.user = res.data.session.user;
+                }
             } else {
                 const res = await supabase.auth.signUp({ email, password });
                 error = res.error;
@@ -726,18 +735,30 @@
         }
 
         async function logout() {
-            await supabase.auth.signOut();
+            if (supabase) await supabase.auth.signOut();
             location.reload();
         }
 
         // --- Nawigacja i Inicjalizacja ---
         async function checkSession() {
-            if (!supabase) return hide('global-loader');
-            const { data } = await supabase.auth.getSession();
-            if (data.session) {
-                state.user = data.session.user;
-                initApp();
-            } else {
+            if (!supabase) {
+                hide('global-loader');
+                showToast("Błąd ładownia bazy danych. Sprawdź połączenie z internetem.", "error");
+                return;
+            }
+            
+            try {
+                // Bezpieczniejszy odczyt sesji
+                const { data, error } = await supabase.auth.getSession();
+                if (data && data.session) {
+                    state.user = data.session.user;
+                    initApp();
+                } else {
+                    hide('global-loader');
+                    show('auth-screen');
+                }
+            } catch(err) {
+                console.error("Błąd sieci przy sprawdzaniu sesji:", err);
                 hide('global-loader');
                 show('auth-screen');
             }
@@ -747,21 +768,31 @@
             hide('auth-screen');
             show('app');
             $('global-loader').style.display = 'flex';
-            html('user-display-name', state.user.email.split('@')[0]);
+            
+            // KLUCZOWA POPRAWKA: Upewniamy się, że użytkownik faktycznie istnieje przed wyciągnięciem adresu e-mail
+            if (state.user && state.user.email) {
+                html('user-display-name', state.user.email.split('@')[0]);
+            } else {
+                html('user-display-name', 'Użytkownik');
+            }
             
             const savedTheme = localStorage.getItem('theme') || 'light';
             changeTheme(savedTheme);
             setVal('theme-select', savedTheme);
 
-            await Promise.all([
-                loadGoals(),
-                loadProducts(),
-                loadExercises()
-            ]);
+            try {
+                await Promise.all([
+                    loadGoals(),
+                    loadProducts(),
+                    loadExercises()
+                ]);
+            } catch (err) {
+                console.error("Błąd ładowania danych początkowych:", err);
+            }
             
             $('global-loader').style.display = 'none';
             navigate('dashboard');
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons(); // Zabezpieczenie przed brakiem Lucide
         }
 
         function toggleSidebar() {
