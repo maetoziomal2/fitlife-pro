@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diet & Workout Tracker</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #f8fafc; --bg-surface: #ffffff; --bg-surface-hover: #f1f5f9;
+            --text-primary: #0f172a; --text-secondary: #64748b;
+            --primary: #3b82f6; --primary-hover: #2563eb;
+            --success: #22c55e; --warning: #eab308; --danger: #ef4444;
+            --border: #e2e8f0; --radius-md: 8px; --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --sidebar-width: 250px; --header-height: 60px;
+        }
+        [data-theme="dark"] {
+            --bg-base: #0f172a; --bg-surface: #1e293b; --bg-surface-hover: #334155;
+            --text-primary: #f8fafc; --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-base); color: var(--text-primary); overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        button { cursor: pointer; border: none; outline: none; background: none; font-family: inherit; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-base); color: var(--text-primary); margin-bottom: 10px; }
+        
+        /* Layout */
+        #app { display: none; height: 100vh; display: flex; }
+        .sidebar { width: var(--sidebar-width); background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; transition: 0.3s; z-index: 50; }
+        .sidebar-logo { font-size: 1.2rem; font-weight: 700; padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-weight: 500; cursor: pointer; transition: 0.2s; }
+        .nav-item:hover, .nav-item.active { background: var(--bg-surface-hover); color: var(--primary); border-right: 3px solid var(--primary); }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .header { height: var(--header-height); background: var(--bg-surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 40; }
+        .content-area { padding: 30px; flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; }
+        
+        /* Components */
+        .btn { padding: 10px 16px; border-radius: var(--radius-md); font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-outline { border: 1px solid var(--border); color: var(--text-primary); }
+        .btn-outline:hover { background: var(--bg-surface-hover); }
+        .btn-danger { background: var(--danger); color: white; }
+        .card { background: var(--bg-surface); border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+        
+        /* Dashboard & Grid */
+        .grid-1 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        
+        .progress-bar { width: 100%; height: 8px; background: var(--bg-base); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+        .progress-fill { height: 100%; background: var(--primary); transition: width 0.5s; }
+        .progress-fill.success { background: var(--success); }
+        .progress-fill.warning { background: var(--warning); }
+        .progress-fill.danger { background: var(--danger); }
+        
+        /* Auth Screen */
+        #auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .auth-box { background: var(--bg-surface); padding: 40px; border-radius: var(--radius-lg); width: 100%; max-width: 400px; box-shadow: var(--shadow-md); text-align: center; }
+        
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--bg-surface); width: 100%; max-width: 500px; border-radius: var(--radius-lg); max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+        
+        /* Calendar */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .calendar-day-header { text-align: center; font-weight: 600; padding: 10px 0; color: var(--text-secondary); }
+        .calendar-day { background: var(--bg-surface); border: 1px solid var(--border); min-height: 100px; padding: 10px; border-radius: var(--radius-md); cursor: pointer; transition: 0.2s; }
+        .calendar-day:hover { border-color: var(--primary); }
+        .calendar-day.today { border: 2px solid var(--primary); }
+        .calendar-day.empty { background: transparent; border: none; cursor: default; }
+        .day-number { font-weight: 600; margin-bottom: 5px; display: block; }
+        .day-indicator { font-size: 0.75rem; display: flex; align-items: center; gap: 4px; margin-top: 4px; color: var(--text-secondary); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        
+        /* Tables & Lists */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        .data-table th { color: var(--text-secondary); font-weight: 500; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); }
+        .list-item:last-child { border-bottom: none; }
+        
+        /* Toasts */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: var(--bg-surface); border-left: 4px solid var(--primary); padding: 15px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s forwards; }
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        /* Utilities */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .text-sm { font-size: 0.875rem; }
+        .text-lg { font-size: 1.125rem; font-weight: 600; }
+        .flex { display: flex; } .flex-col { display: flex; flex-direction: column; }
+        .items-center { align-items: center; } .justify-between { justify-content: space-between; } .justify-center { justify-content: center; }
+        .gap-2 { gap: 8px; } .gap-4 { gap: 16px; }
+        .mt-2 { margin-top: 8px; } .mt-4 { margin-top: 16px; } .mb-2 { margin-bottom: 8px; } .mb-4 { margin-bottom: 16px; }
+        
+        /* Mobile */
+        .mobile-nav-toggle { display: none; }
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -100%; top: 0; bottom: 0; width: 80%; max-width: 300px; box-shadow: var(--shadow-md); }
+            .sidebar.open { left: 0; }
+            .mobile-nav-toggle { display: block; }
+            .calendar-grid { grid-template-columns: repeat(7, 1fr); gap: 2px; }
+            .calendar-day { min-height: 60px; padding: 4px; font-size: 0.8rem; }
+            .day-indicator { font-size: 0.65rem; }
+        }
+        
+        /* Loading Overlay */
+        #global-loader { position: fixed; inset: 0; background: var(--bg-base); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="global-loader"><div class="spinner"></div><div class="mt-4">Ładowanie aplikacji...</div></div>
+    
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="hidden">
+        <div class="auth-box">
+            <h2 class="mb-2"><i data-lucide="activity"></i> FitTracker Pro</h2>
+            <p class="text-sm text-secondary mb-4">Zaloguj się lub utwórz konto</p>
+            <form id="auth-form" onsubmit="handleAuth(event)">
+                <input type="email" id="auth-email" placeholder="Adres e-mail" required>
+                <input type="password" id="auth-password" placeholder="Hasło" required>
+                <button type="submit" class="btn btn-primary" style="width: 100%;" id="auth-btn">Zaloguj się</button>
+                <p class="mt-4 text-sm">
+                    <a href="#" onclick="toggleAuthMode()" id="auth-toggle">Nie masz konta? Utwórz je.</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP SCREEN -->
+    <div id="app" class="hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <i data-lucide="activity" style="color: var(--primary)"></i> FitTracker Pro
+                <button class="mobile-nav-toggle" onclick="toggleSidebar()" style="margin-left: auto;"><i data-lucide="x"></i></button>
+            </div>
+            <ul class="mt-4">
+                <li class="nav-item active" data-target="dashboard" onclick="navigate('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard</li>
+                <li class="nav-item" data-target="calendar" onclick="navigate('calendar')"><i data-lucide="calendar"></i> Kalendarz</li>
+                <li class="nav-item" data-target="diet" onclick="navigate('diet')"><i data-lucide="utensils"></i> Dieta & Posiłki</li>
+                <li class="nav-item" data-target="products" onclick="navigate('products')"><i data-lucide="apple"></i> Baza Produktów</li>
+                <li class="nav-item" data-target="water" onclick="navigate('water')"><i data-lucide="droplet"></i> Woda</li>
+                <li class="nav-item" data-target="workouts" onclick="navigate('workouts')"><i data-lucide="dumbbell"></i> Treningi</li>
+                <li class="nav-item" data-target="exercises" onclick="navigate('exercises')"><i data-lucide="biceps-flexed"></i> Ćwiczenia</li>
+                <li class="nav-item" data-target="weight" onclick="navigate('weight')"><i data-lucide="scale"></i> Waga</li>
+                <li class="nav-item" data-target="stats" onclick="navigate('stats')"><i data-lucide="bar-chart-2"></i> Statystyki</li>
+                <li class="nav-item" data-target="goals" onclick="navigate('goals')"><i data-lucide="target"></i> Cele</li>
+                <li class="nav-item" data-target="settings" onclick="navigate('settings')"><i data-lucide="settings"></i> Ustawienia</li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="header">
+                <div class="flex items-center gap-4">
+                    <button class="mobile-nav-toggle" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
+                    <span id="current-date-display" class="font-medium"></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="navigate('settings')" title="Ustawienia"><i data-lucide="user"></i> <span id="user-display-name"></span></button>
+                    <button onclick="logout()" title="Wyloguj"><i data-lucide="log-out"></i></button>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <!-- VIEW: Dashboard -->
+                <div id="view-dashboard" class="view-section">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Dzisiejszy przegląd</h2>
+                        <div class="flex gap-2">
+                            <button class="btn btn-primary" onclick="openModal('modal-meal')"><i data-lucide="plus"></i> Posiłek</button>
+                            <button class="btn btn-outline" onclick="openModal('modal-water')"><i data-lucide="droplet"></i> Woda</button>
+                            <button class="btn btn-outline" onclick="openModal('modal-workout')"><i data-lucide="dumbbell"></i> Trening</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-4 mb-4">
+                        <div class="card">
+                            <div class="text-sm text-secondary">Kalorie</div>
+                            <div class="text-lg"><span id="dash-kcal-current">0</span> / <span id="dash-kcal-goal">0</span> kcal</div>
+                            <div class="progress-bar"><div id="dash-kcal-bar" class="progress-fill"></div></div>
+                        </div>
+                        <div class="card">
+                            <div class="text-sm text-secondary">Białko</div>
+                            <div class="text-lg"><span id="dash-protein-current">0</span> / <span id="dash-protein-goal">0</span> g</div>
+                            <div class="progress-bar"><div id="dash-protein-bar" class="progress-fill"></div></div>
+                        </div>
+                        <div class="card">
+                            <div class="text-sm text-secondary">Węglowodany</div>
+                            <div class="text-lg"><span id="dash-carbs-current">0</span> / <span id="dash-carbs-goal">0</span> g</div>
+                            <div class="progress-bar"><div id="dash-carbs-bar" class="progress-fill"></div></div>
+                        </div>
+                        <div class="card">
+                            <div class="text-sm text-secondary">Tłuszcze</div>
+                            <div class="text-lg"><span id="dash-fat-current">0</span> / <span id="dash-fat-goal">0</span> g</div>
+                            <div class="progress-bar"><div id="dash-fat-bar" class="progress-fill"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3>🍽️ Dzisiejsze posiłki</h3>
+                            <div id="dash-meals-list" class="mt-4 flex-col gap-2"></div>
+                            <button class="btn btn-outline mt-4 w-100" style="width:100%" onclick="navigate('diet')">Szczegóły diety</button>
+                        </div>
+                        <div class="card">
+                            <h3>🏋️ Dzisiejszy trening</h3>
+                            <div id="dash-workout-container" class="mt-4">
+                                <p class="text-secondary text-sm">Ładowanie...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: Calendar -->
+                <div id="view-calendar" class="view-section hidden">
+                    <div class="calendar-header">
+                        <h2>Kalendarz</h2>
+                        <div class="flex gap-4 items-center">
+                            <button class="btn btn-outline" onclick="changeMonth(-1)"><i data-lucide="chevron-left"></i></button>
+                            <h3 id="calendar-month-year"></h3>
+                            <button class="btn btn-outline" onclick="changeMonth(1)"><i data-lucide="chevron-right"></i></button>
+                            <button class="btn btn-primary" onclick="setCalendarToToday()">Dzisiaj</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="calendar-day-header">Pn</div><div class="calendar-day-header">Wt</div>
+                        <div class="calendar-day-header">Śr</div><div class="calendar-day-header">Cz</div>
+                        <div class="calendar-day-header">Pt</div><div class="calendar-day-header">So</div>
+                        <div class="calendar-day-header">Nd</div>
+                    </div>
+                    <div class="calendar-grid" id="calendar-days"></div>
+                </div>
+
+                <!-- VIEW: Diet -->
+                <div id="view-diet" class="view-section hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Dieta: <span id="diet-date-label">Dzisiaj</span></h2>
+                        <div class="flex gap-2">
+                            <input type="date" id="diet-date-picker" onchange="loadDietForDate(this.value)" class="mb-0">
+                            <button class="btn btn-primary" onclick="openModal('modal-meal')"><i data-lucide="plus"></i> Dodaj posiłek</button>
+                        </div>
+                    </div>
+                    <div class="grid-4 mb-4" id="diet-macros-summary"></div>
+                    <div class="card">
+                        <h3>Lista posiłków</h3>
+                        <div id="diet-meals-container" class="mt-4"></div>
+                    </div>
+                </div>
+
+                <!-- VIEW: Products -->
+                <div id="view-products" class="view-section hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Baza Produktów</h2>
+                        <button class="btn btn-primary" onclick="openModal('modal-product')"><i data-lucide="plus"></i> Nowy produkt</button>
+                    </div>
+                    <input type="text" id="product-search" placeholder="Szukaj produktu..." onkeyup="renderProducts()">
+                    <div class="card overflow-x-auto">
+                        <table class="data-table">
+                            <thead><tr><th>Nazwa</th><th>Kcal/100g</th><th>Białko</th><th>Węgle</th><th>Tłuszcze</th><th>Akcje</th></tr></thead>
+                            <tbody id="products-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VIEW: Water -->
+                <div id="view-water" class="view-section hidden">
+                    <h2>Nawodnienie: <span id="water-date-label">Dzisiaj</span></h2>
+                    <div class="card text-center mt-4" style="max-width: 400px; margin: 20px auto;">
+                        <i data-lucide="droplet" style="color: var(--primary); width: 48px; height: 48px;"></i>
+                        <h1 class="mt-2"><span id="water-current-text">0</span> / <span id="water-goal-text">2500</span> ml</h1>
+                        <div class="progress-bar mt-4 mb-4" style="height: 20px; border-radius: 10px;"><div id="water-progress-bar" class="progress-fill"></div></div>
+                        <div class="flex justify-center gap-2 mt-4">
+                            <button class="btn btn-outline" onclick="addWater(250)">+250 ml</button>
+                            <button class="btn btn-outline" onclick="addWater(500)">+500 ml</button>
+                            <button class="btn btn-outline" onclick="addWater(750)">+750 ml</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: Workouts -->
+                <div id="view-workouts" class="view-section hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Treningi</h2>
+                        <button class="btn btn-primary" onclick="openModal('modal-workout')"><i data-lucide="plus"></i> Zaplanuj trening</button>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3>Najbliższe treningi</h3>
+                            <div id="workouts-upcoming-list" class="mt-4"></div>
+                        </div>
+                        <div class="card">
+                            <h3>Historia treningów</h3>
+                            <div id="workouts-history-list" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: Exercises -->
+                <div id="view-exercises" class="view-section hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Baza Ćwiczeń</h2>
+                        <button class="btn btn-primary" onclick="openModal('modal-exercise')"><i data-lucide="plus"></i> Nowe ćwiczenie</button>
+                    </div>
+                    <input type="text" id="exercise-search" placeholder="Szukaj ćwiczenia..." onkeyup="renderExercises()">
+                    <div class="grid-3" id="exercises-grid"></div>
+                </div>
+
+                <!-- VIEW: Weight -->
+                <div id="view-weight" class="view-section hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Waga</h2>
+                        <button class="btn btn-primary" onclick="openModal('modal-weight')"><i data-lucide="plus"></i> Dodaj pomiar</button>
+                    </div>
+                    <div class="card"><canvas id="weightChart" style="max-height: 300px;"></canvas></div>
+                    <div class="card">
+                        <h3>Historia pomiarów</h3>
+                        <table class="data-table mt-4">
+                            <thead><tr><th>Data</th><th>Waga</th><th>Notatka</th><th>Akcje</th></tr></thead>
+                            <tbody id="weight-history-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- VIEW: Stats -->
+                <div id="view-stats" class="view-section hidden">
+                    <h2>Statystyki</h2>
+                    <select id="stats-range" class="mb-4 mt-4" style="max-width: 200px;" onchange="loadStats()">
+                        <option value="7">Ostatnie 7 dni</option>
+                        <option value="30" selected>Ostatnie 30 dni</option>
+                        <option value="90">Ostatnie 90 dni</option>
+                    </select>
+                    <div class="grid-2">
+                        <div class="card"><h3>Spożycie Kalorii</h3><canvas id="chart-calories"></canvas></div>
+                        <div class="card"><h3>Makroskładniki (Średnia)</h3><canvas id="chart-macros"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- VIEW: Goals -->
+                <div id="view-goals" class="view-section hidden">
+                    <h2>Cele Żywieniowe</h2>
+                    <div class="card mt-4" style="max-width: 600px;">
+                        <form onsubmit="saveGoals(event)">
+                            <div class="grid-2">
+                                <div><label>Kalorie (kcal)</label><input type="number" id="goal-calories" required></div>
+                                <div><label>Białko (g)</label><input type="number" id="goal-protein" required></div>
+                                <div><label>Węglowodany (g)</label><input type="number" id="goal-carbs" required></div>
+                                <div><label>Tłuszcze (g)</label><input type="number" id="goal-fat" required></div>
+                                <div><label>Błonnik (g)</label><input type="number" id="goal-fiber" required></div>
+                                <div><label>Woda (ml)</label><input type="number" id="goal-water" required></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-4">Zapisz cele</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- VIEW: Settings -->
+                <div id="view-settings" class="view-section hidden">
+                    <h2>Ustawienia</h2>
+                    <div class="card mt-4" style="max-width: 600px;">
+                        <div class="mb-4">
+                            <label>Motyw</label>
+                            <select id="theme-select" onchange="changeTheme(this.value)">
+                                <option value="light">Jasny</option>
+                                <option value="dark">Ciemny</option>
+                            </select>
+                        </div>
+                        <hr style="border:0; border-top:1px solid var(--border); margin: 20px 0;">
+                        <h3>Eksport danych</h3>
+                        <p class="text-sm text-secondary mb-2">Pobierz swoje dane w formacie CSV.</p>
+                        <button class="btn btn-outline" onclick="exportData()"><i data-lucide="download"></i> Eksportuj CSV</button>
+                        <hr style="border:0; border-top:1px solid var(--border); margin: 20px 0;">
+                        <h3>Konto</h3>
+                        <button class="btn btn-danger mt-2" onclick="deleteAccount()"><i data-lucide="trash-2"></i> Usuń konto</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Modal: Day Details -->
+    <div id="modal-day" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="day-modal-title">Szczegóły dnia</h3>
+                <button onclick="closeModal('modal-day')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" id="day-modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="goToDayDetails()">Przejdź do tego dnia</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Meal -->
+    <div id="modal-meal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Dodaj posiłek</h3>
+                <button onclick="closeModal('modal-meal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-meal" onsubmit="saveMeal(event)">
+                    <input type="hidden" id="meal-id">
+                    <div class="grid-2">
+                        <div>
+                            <label>Data</label>
+                            <input type="date" id="meal-date" required>
+                        </div>
+                        <div>
+                            <label>Godzina</label>
+                            <input type="time" id="meal-time" required>
+                        </div>
+                    </div>
+                    <label>Typ posiłku</label>
+                    <select id="meal-type">
+                        <option value="Śniadanie">Śniadanie</option><option value="II śniadanie">II śniadanie</option>
+                        <option value="Obiad">Obiad</option><option value="Podwieczorek">Podwieczorek</option>
+                        <option value="Kolacja">Kolacja</option><option value="Przekąska">Przekąska</option><option value="Inne">Inne</option>
+                    </select>
+                    <label>Wybierz produkt z bazy</label>
+                    <select id="meal-product-select" onchange="autoFillMealMacros()">
+                        <option value="">-- Wpisz ręcznie poniżej --</option>
+                    </select>
+                    <label>Nazwa posiłku</label>
+                    <input type="text" id="meal-name" required>
+                    <label>Ilość w gramach (opcjonalnie do przeliczenia)</label>
+                    <input type="number" id="meal-grams" onkeyup="recalcMealMacros()">
+                    <div class="grid-2 mt-2">
+                        <div><label>Kcal</label><input type="number" id="meal-kcal" step="0.1" required></div>
+                        <div><label>Białko (g)</label><input type="number" id="meal-protein" step="0.1" required></div>
+                        <div><label>Węgle (g)</label><input type="number" id="meal-carbs" step="0.1" required></div>
+                        <div><label>Tłuszcze (g)</label><input type="number" id="meal-fat" step="0.1" required></div>
+                    </div>
+                    <label>Błonnik (g)</label><input type="number" id="meal-fiber" step="0.1" value="0">
+                    <label>Notatka</label>
+                    <textarea id="meal-notes" rows="2"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2 w-100" style="width: 100%;">Zapisz posiłek</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Product -->
+    <div id="modal-product" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Produkt (wartości na 100g)</h3>
+                <button onclick="closeModal('modal-product')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-product" onsubmit="saveProduct(event)">
+                    <input type="hidden" id="product-id">
+                    <label>Nazwa</label><input type="text" id="prod-name" required>
+                    <div class="grid-2">
+                        <div><label>Kcal</label><input type="number" id="prod-kcal" step="0.1" required></div>
+                        <div><label>Białko (g)</label><input type="number" id="prod-protein" step="0.1" required></div>
+                        <div><label>Węgle (g)</label><input type="number" id="prod-carbs" step="0.1" required></div>
+                        <div><label>Tłuszcze (g)</label><input type="number" id="prod-fat" step="0.1" required></div>
+                    </div>
+                    <label>Błonnik (g)</label><input type="number" id="prod-fiber" step="0.1" value="0">
+                    <button type="submit" class="btn btn-primary mt-2 w-100" style="width: 100%;">Zapisz</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Weight -->
+    <div id="modal-weight" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Dodaj pomiar wagi</h3>
+                <button onclick="closeModal('modal-weight')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="saveWeight(event)">
+                    <label>Data</label><input type="date" id="weight-date" required>
+                    <label>Waga (kg)</label><input type="number" step="0.1" id="weight-val" required>
+                    <label>Notatka</label><textarea id="weight-notes" rows="2"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2 w-100" style="width: 100%;">Zapisz</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Workout -->
+    <div id="modal-workout" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Zaplanuj Trening</h3>
+                <button onclick="closeModal('modal-workout')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="saveWorkout(event)">
+                    <input type="hidden" id="workout-id">
+                    <label>Nazwa</label><input type="text" id="wo-name" required placeholder="np. Push, FBW">
+                    <div class="grid-2">
+                        <div><label>Data</label><input type="date" id="wo-date" required></div>
+                        <div><label>Godzina</label><input type="time" id="wo-time"></div>
+                    </div>
+                    <div class="grid-2">
+                        <div><label>Typ</label>
+                            <select id="wo-type">
+                                <option>Siłowy</option><option>Cardio</option><option>Bieganie</option><option>Inny</option>
+                            </select>
+                        </div>
+                        <div><label>Czas (min)</label><input type="number" id="wo-duration"></div>
+                    </div>
+                    <label>Status</label>
+                    <select id="wo-status">
+                        <option value="planned">Zaplanowany</option>
+                        <option value="completed">Wykonany</option>
+                        <option value="skipped">Pominięty</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary mt-4 w-100" style="width: 100%;">Zapisz Trening</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Execute Workout (Sets/Reps) -->
+    <div id="modal-execute-workout" class="modal-overlay">
+        <div class="modal-content" style="max-width: 800px; max-height: 95vh;">
+            <div class="modal-header">
+                <h3 id="exec-wo-title">Trening</h3>
+                <button onclick="closeModal('modal-execute-workout')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="flex justify-between items-center mb-4">
+                    <select id="exec-add-exercise-select" style="max-width: 250px; margin-bottom: 0;">
+                        <option value="">Wybierz ćwiczenie do dodania</option>
+                    </select>
+                    <button class="btn btn-outline" onclick="addExerciseToWorkout()"><i data-lucide="plus"></i> Dodaj ćwiczenie</button>
+                </div>
+                <div id="exec-wo-exercises" class="flex-col gap-4"></div>
+                <div class="mt-4 p-4 card text-center" id="rest-timer-container" style="display:none; border-color: var(--primary);">
+                    <h4>Czas przerwy</h4>
+                    <h2 id="rest-timer-display" style="color: var(--primary); font-size: 2rem;">00:00</h2>
+                    <button class="btn btn-outline mt-2" onclick="stopTimer()">Zatrzymaj</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="completeWorkout()">Zakończ trening</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Exercise DB -->
+    <div id="modal-exercise" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nowe ćwiczenie w bazie</h3>
+                <button onclick="closeModal('modal-exercise')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="saveExercise(event)">
+                    <input type="hidden" id="ex-id">
+                    <label>Nazwa</label><input type="text" id="ex-name" required>
+                    <label>Grupa mięśniowa</label>
+                    <select id="ex-muscle">
+                        <option>Klatka piersiowa</option><option>Plecy</option><option>Barki</option>
+                        <option>Biceps</option><option>Triceps</option><option>Nogi</option>
+                        <option>Brzuch</option><option>Całe ciało</option><option>Cardio</option>
+                    </select>
+                    <label>Opis</label><textarea id="ex-desc" rows="2"></textarea>
+                    <button type="submit" class="btn btn-primary mt-2 w-100" style="width: 100%;">Zapisz</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    <div id="toast-container"></div>
+
+    <script>
+        // ========================================
+        // KONFIGURACJA SUPABASE
+        // Wklej tutaj URL projektu i anon/public key
+        // ========================================
+        const SUPABASE_URL = "TU_WKLEJ_SUPABASE_URL";
+        const SUPABASE_ANON_KEY = "TU_WKLEJ_SUPABASE_ANON_KEY";
+
+        /*
+        INSTRUKCJA URUCHOMIENIA:
+        1. Utwórz projekt Supabase.
+        2. Skopiuj Project URL i anon key do zmiennych wyżej.
+        3. Uruchom poniższy SQL w Supabase SQL Editor.
+        4. Zapisz plik jako index.html i wgraj na GitHub (włącz GitHub Pages).
+        
+        ========== SQL DO WYKONANIA W SUPABASE ==========
+        
+        -- Włącz rozszerzenie UUID
+        CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+        -- Tabele
+        CREATE TABLE profiles ( id UUID REFERENCES auth.users NOT NULL PRIMARY KEY, email TEXT, display_name TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE nutrition_goals ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, calories INT, protein INT, carbs INT, fat INT, fiber INT, water INT, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE meals ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, meal_date DATE NOT NULL, meal_time TIME, meal_type TEXT, name TEXT, calories FLOAT, protein FLOAT, carbs FLOAT, fat FLOAT, fiber FLOAT, grams INT, notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE products ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, name TEXT NOT NULL, calories FLOAT, protein FLOAT, carbs FLOAT, fat FLOAT, fiber FLOAT, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE water_logs ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, log_date DATE NOT NULL, amount_ml INT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE weight_logs ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, log_date DATE NOT NULL, weight FLOAT NOT NULL, notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE workouts ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, workout_date DATE NOT NULL, start_time TIME, duration_minutes INT, name TEXT, workout_type TEXT, status TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE exercises ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), user_id UUID REFERENCES auth.users NOT NULL, name TEXT NOT NULL, muscle_group TEXT, description TEXT, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE workout_exercises ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), workout_id UUID REFERENCES workouts ON DELETE CASCADE, exercise_id UUID REFERENCES exercises, exercise_order INT, created_at TIMESTAMPTZ DEFAULT NOW() );
+        CREATE TABLE workout_sets ( id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), workout_exercise_id UUID REFERENCES workout_exercises ON DELETE CASCADE, set_number INT, weight FLOAT, repetitions INT, completed BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ DEFAULT NOW() );
+
+        -- RLS Policies
+        ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE nutrition_goals ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE meals ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE water_logs ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE weight_logs ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE workouts ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE exercises ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE workout_exercises ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE workout_sets ENABLE ROW LEVEL SECURITY;
+
+        -- Helper policy function
+        CREATE OR REPLACE FUNCTION set_user_rls() RETURNS void AS $$ BEGIN END; $$ LANGUAGE plpgsql;
+        
+        DO $$ DECLARE t TEXT; BEGIN
+            FOR t IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' LOOP
+                EXECUTE format('CREATE POLICY "ALL_FOR_OWNER" ON %I FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);', t);
+            END LOOP;
+        END $$;
+        -- Wyjątki dla relacyjnych (workout_exercises, workout_sets łączą się przez workout)
+        DROP POLICY IF EXISTS "ALL_FOR_OWNER" ON workout_exercises;
+        CREATE POLICY "ALL_FOR_OWNER" ON workout_exercises FOR ALL USING ( workout_id IN (SELECT id FROM workouts WHERE user_id = auth.uid()) );
+        DROP POLICY IF EXISTS "ALL_FOR_OWNER" ON workout_sets;
+        CREATE POLICY "ALL_FOR_OWNER" ON workout_sets FOR ALL USING ( workout_exercise_id IN (SELECT id FROM workout_exercises WHERE workout_id IN (SELECT id FROM workouts WHERE user_id = auth.uid())) );
+        
+        -- Trigger dla profiles
+        CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger AS $$
+        BEGIN INSERT INTO public.profiles (id, email) VALUES (new.id, new.email); RETURN new; END;
+        $$ LANGUAGE plpgsql SECURITY DEFINER;
+        CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+        =================================================
+        */
+
+        // --- Inicjalizacja Supabase ---
+        let supabase;
+        if (SUPABASE_URL !== "TU_WKLEJ_SUPABASE_URL") {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        // --- Stan Aplikacji ---
+        const state = {
+            user: null,
+            date: new Date(),
+            calendarDate: new Date(),
+            goals: { calories: 2000, protein: 150, carbs: 200, fat: 70, fiber: 25, water: 2500 },
+            meals: [], products: [], water: 0, weight: [], workouts: [], exercises: [],
+            charts: {}
+        };
+
+        let currentActiveWorkoutId = null;
+        let restTimerInterval = null;
+
+        // --- Narzędzia ---
+        const $ = id => document.getElementById(id);
+        const show = id => { if($(id)) $(id).classList.remove('hidden'); };
+        const hide = id => { if($(id)) $(id).classList.add('hidden'); };
+        const val = id => $(id) ? $(id).value : null;
+        const setVal = (id, v) => { if($(id)) $(id).value = v; };
+        const html = (id, h) => { if($(id)) $(id).innerHTML = h; };
+        const formatDate = d => d.toISOString().split('T')[0];
+        
+        function showToast(msg, type = 'success') {
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i> ${msg}`;
+            $('toast-container').appendChild(t);
+            lucide.createIcons();
+            setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3000);
+        }
+
+        // --- Autoryzacja ---
+        let isLoginMode = true;
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            $('auth-btn').textContent = isLoginMode ? "Zaloguj się" : "Utwórz konto";
+            $('auth-toggle').textContent = isLoginMode ? "Nie masz konta? Utwórz je." : "Masz już konto? Zaloguj się.";
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            if (!supabase) return alert("Skonfiguruj Supabase w kodzie!");
+            const email = val('auth-email'), password = val('auth-password');
+            $('global-loader').style.display = 'flex';
+            
+            let error;
+            if (isLoginMode) {
+                const res = await supabase.auth.signInWithPassword({ email, password });
+                error = res.error;
+            } else {
+                const res = await supabase.auth.signUp({ email, password });
+                error = res.error;
+                if (!error) showToast("Konto utworzone! Zaloguj się.");
+            }
+            
+            $('global-loader').style.display = 'none';
+            if (error) showToast(error.message, 'error');
+            else if (isLoginMode) initApp();
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            location.reload();
+        }
+
+        // --- Nawigacja i Inicjalizacja ---
+        async function checkSession() {
+            if (!supabase) return hide('global-loader');
+            const { data } = await supabase.auth.getSession();
+            if (data.session) {
+                state.user = data.session.user;
+                initApp();
+            } else {
+                hide('global-loader');
+                show('auth-screen');
+            }
+        }
+
+        async function initApp() {
+            hide('auth-screen');
+            show('app');
+            $('global-loader').style.display = 'flex';
+            html('user-display-name', state.user.email.split('@')[0]);
+            
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            changeTheme(savedTheme);
+            setVal('theme-select', savedTheme);
+
+            await Promise.all([
+                loadGoals(),
+                loadProducts(),
+                loadExercises()
+            ]);
+            
+            $('global-loader').style.display = 'none';
+            navigate('dashboard');
+            lucide.createIcons();
+        }
+
+        function toggleSidebar() {
+            $('sidebar').classList.toggle('open');
+        }
+
+        function navigate(view) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            show(`view-${view}`);
+            const navItem = document.querySelector(`[data-target="${view}"]`);
+            if (navItem) navItem.classList.add('active');
+            
+            if (window.innerWidth <= 768) $('sidebar').classList.remove('open');
+            
+            updateDateDisplay();
+            
+            // View specific logic
+            if(view === 'dashboard') loadDashboard();
+            if(view === 'calendar') renderCalendar();
+            if(view === 'diet') { setVal('diet-date-picker', formatDate(state.date)); loadDietForDate(formatDate(state.date)); }
+            if(view === 'products') renderProducts();
+            if(view === 'water') loadWaterForDate(formatDate(state.date));
+            if(view === 'workouts') loadWorkoutsView();
+            if(view === 'exercises') renderExercises();
+            if(view === 'weight') loadWeight();
+            if(view === 'stats') loadStats();
+            if(view === 'goals') renderGoalsForm();
+        }
+
+        function updateDateDisplay() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            html('current-date-display', state.date.toLocaleDateString('pl-PL', options));
+        }
+
+        // --- Modale ---
+        function openModal(id) { show(id); }
+        function closeModal(id) { 
+            hide(id); 
+            if(id === 'modal-meal') $('form-meal').reset(); 
+            if(id === 'modal-product') $('form-product').reset();
+            if(id === 'modal-execute-workout') stopTimer();
+        }
+
+        // --- API & Logika ---
+        
+        async function loadGoals() {
+            const { data } = await supabase.from('nutrition_goals').select('*').eq('user_id', state.user.id).single();
+            if (data) state.goals = data;
+            else {
+                await supabase.from('nutrition_goals').insert([{ user_id: state.user.id, ...state.goals }]);
+            }
+        }
+
+        function renderGoalsForm() {
+            setVal('goal-calories', state.goals.calories); setVal('goal-protein', state.goals.protein);
+            setVal('goal-carbs', state.goals.carbs); setVal('goal-fat', state.goals.fat);
+            setVal('goal-fiber', state.goals.fiber); setVal('goal-water', state.goals.water);
+        }
+
+        async function saveGoals(e) {
+            e.preventDefault();
+            const payload = {
+                calories: parseInt(val('goal-calories')), protein: parseInt(val('goal-protein')),
+                carbs: parseInt(val('goal-carbs')), fat: parseInt(val('goal-fat')),
+                fiber: parseInt(val('goal-fiber')), water: parseInt(val('goal-water'))
+            };
+            const { error } = await supabase.from('nutrition_goals').update(payload).eq('user_id', state.user.id);
+            if (!error) {
+                state.goals = { ...state.goals, ...payload };
+                showToast("Cele zaktualizowane");
+            } else showToast("Błąd zapisu", "error");
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            const todayStr = formatDate(state.date);
+            
+            // Fetch today's meals
+            const { data: meals } = await supabase.from('meals').select('*').eq('meal_date', todayStr).eq('user_id', state.user.id);
+            let kc = 0, p = 0, c = 0, f = 0;
+            let mealsHtml = '';
+            (meals || []).forEach(m => {
+                kc += m.calories; p += m.protein; c += m.carbs; f += m.fat;
+                mealsHtml += `<div class="list-item"><span>${m.name}</span><strong>${Math.round(m.calories)} kcal</strong></div>`;
+            });
+            if(!mealsHtml) mealsHtml = '<div class="text-secondary text-sm">Brak posiłków.</div>';
+            html('dash-meals-list', mealsHtml);
+
+            // Update Progress
+            const updateProg = (id, current, goal, elBar) => {
+                html(`${id}-current`, Math.round(current)); html(`${id}-goal`, goal);
+                let pct = Math.min((current/goal)*100, 100) || 0;
+                let bar = $(elBar);
+                bar.style.width = `${pct}%`;
+                bar.className = 'progress-fill ' + (pct > 100 ? 'danger' : (pct > 80 ? 'success' : ''));
+            };
+            updateProg('dash-kcal', kc, state.goals.calories, 'dash-kcal-bar');
+            updateProg('dash-protein', p, state.goals.protein, 'dash-protein-bar');
+            updateProg('dash-carbs', c, state.goals.carbs, 'dash-carbs-bar');
+            updateProg('dash-fat', f, state.goals.fat, 'dash-fat-bar');
+
+            // Fetch today's workout
+            const { data: workouts } = await supabase.from('workouts').select('*').eq('workout_date', todayStr).eq('user_id', state.user.id);
+            if(workouts && workouts.length > 0) {
+                let w = workouts[0];
+                let statCol = w.status === 'completed' ? 'var(--success)' : 'var(--warning)';
+                html('dash-workout-container', `
+                    <div style="border-left: 4px solid ${statCol}; padding-left: 10px;">
+                        <strong>${w.name}</strong> (${w.workout_type})<br>
+                        <span class="text-sm text-secondary">Status: ${w.status === 'completed' ? 'Wykonany' : 'Zaplanowany'}</span>
+                    </div>
+                    <button class="btn btn-primary mt-2" onclick="openExecuteWorkout('${w.id}')">Przejdź do treningu</button>
+                `);
+            } else {
+                html('dash-workout-container', `<p class="text-secondary text-sm mb-2">Brak zaplanowanego treningu na dziś.</p><button class="btn btn-outline" onclick="openModal('modal-workout'); setVal('wo-date', '${todayStr}');">Zaplanuj teraz</button>`);
+            }
+        }
+
+        // Products
+        async function loadProducts() {
+            const { data } = await supabase.from('products').select('*').eq('user_id', state.user.id);
+            state.products = data || [];
+            updateProductSelects();
+        }
+        function updateProductSelects() {
+            const sel = $('meal-product-select');
+            if(sel) {
+                sel.innerHTML = '<option value="">-- Wpisz ręcznie poniżej --</option>' + 
+                    state.products.map(p => `<option value="${p.id}">${p.name} (${p.calories} kcal/100g)</option>`).join('');
+            }
+        }
+        function renderProducts() {
+            const q = val('product-search').toLowerCase();
+            const filtered = state.products.filter(p => p.name.toLowerCase().includes(q));
+            html('products-table-body', filtered.map(p => `
+                <tr>
+                    <td>${p.name}</td><td>${p.calories}</td><td>${p.protein}</td><td>${p.carbs}</td><td>${p.fat}</td>
+                    <td><button onclick="deleteProduct('${p.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i></button></td>
+                </tr>
+            `).join(''));
+            lucide.createIcons();
+        }
+        async function saveProduct(e) {
+            e.preventDefault();
+            const p = {
+                user_id: state.user.id, name: val('prod-name'),
+                calories: parseFloat(val('prod-kcal')), protein: parseFloat(val('prod-protein')),
+                carbs: parseFloat(val('prod-carbs')), fat: parseFloat(val('prod-fat')), fiber: parseFloat(val('prod-fiber'))
+            };
+            const { data, error } = await supabase.from('products').insert([p]).select();
+            if(!error) { state.products.push(data[0]); renderProducts(); updateProductSelects(); closeModal('modal-product'); showToast('Produkt dodany'); }
+        }
+        async function deleteProduct(id) {
+            if(!confirm("Usunąć produkt?")) return;
+            await supabase.from('products').delete().eq('id', id);
+            state.products = state.products.filter(p => p.id !== id);
+            renderProducts(); updateProductSelects(); showToast("Usunięto");
+        }
+
+        // Diet & Meals
+        function autoFillMealMacros() {
+            const pid = val('meal-product-select');
+            if(!pid) return;
+            const p = state.products.find(x => x.id === pid);
+            if(p) {
+                setVal('meal-name', p.name);
+                setVal('meal-kcal', p.calories); setVal('meal-protein', p.protein);
+                setVal('meal-carbs', p.carbs); setVal('meal-fat', p.fat); setVal('meal-fiber', p.fiber);
+                setVal('meal-grams', 100);
+            }
+        }
+        function recalcMealMacros() {
+            const pid = val('meal-product-select');
+            const g = parseFloat(val('meal-grams'));
+            if(!pid || isNaN(g) || g<=0) return;
+            const p = state.products.find(x => x.id === pid);
+            if(p) {
+                const ratio = g / 100;
+                setVal('meal-kcal', (p.calories * ratio).toFixed(1)); setVal('meal-protein', (p.protein * ratio).toFixed(1));
+                setVal('meal-carbs', (p.carbs * ratio).toFixed(1)); setVal('meal-fat', (p.fat * ratio).toFixed(1));
+                setVal('meal-fiber', (p.fiber * ratio).toFixed(1));
+            }
+        }
+        async function saveMeal(e) {
+            e.preventDefault();
+            const m = {
+                user_id: state.user.id, meal_date: val('meal-date'), meal_time: val('meal-time'),
+                meal_type: val('meal-type'), name: val('meal-name'), grams: val('meal-grams') || null,
+                calories: parseFloat(val('meal-kcal')), protein: parseFloat(val('meal-protein')),
+                carbs: parseFloat(val('meal-carbs')), fat: parseFloat(val('meal-fat')), fiber: parseFloat(val('meal-fiber')),
+                notes: val('meal-notes')
+            };
+            const { error } = await supabase.from('meals').insert([m]);
+            if(!error) { closeModal('modal-meal'); showToast("Posiłek zapisany"); if($('view-diet').classList.contains('hidden')===false) loadDietForDate(val('meal-date')); if($('view-dashboard').classList.contains('hidden')===false) loadDashboard(); }
+        }
+        async function loadDietForDate(dateStr) {
+            setVal('diet-date-picker', dateStr);
+            html('diet-date-label', dateStr === formatDate(new Date()) ? 'Dzisiaj' : dateStr);
+            setVal('meal-date', dateStr); // Pre-fill modal
+            
+            const { data } = await supabase.from('meals').select('*').eq('meal_date', dateStr).eq('user_id', state.user.id).order('meal_time');
+            let kc=0, p=0, c=0, f=0;
+            let list = '';
+            (data||[]).forEach(m => {
+                kc+=m.calories; p+=m.protein; c+=m.carbs; f+=m.fat;
+                list += `
+                    <div class="list-item flex-col items-start gap-2" style="align-items: stretch;">
+                        <div class="flex justify-between w-100">
+                            <strong>${m.name}</strong>
+                            <span>${Math.round(m.calories)} kcal</span>
+                        </div>
+                        <div class="text-sm text-secondary flex justify-between w-100">
+                            <span>${m.meal_type} ${m.meal_time ? m.meal_time.substring(0,5) : ''}</span>
+                            <span>B: ${m.protein}g | W: ${m.carbs}g | T: ${m.fat}g</span>
+                        </div>
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="deleteMeal('${m.id}', '${dateStr}')" class="text-sm" style="color:var(--danger)"><i data-lucide="trash-2" style="width:16px;height:16px"></i> Usuń</button>
+                        </div>
+                    </div>`;
+            });
+            if(!list) list = '<p class="text-secondary p-4">Brak posiłków w tym dniu.</p>';
+            html('diet-meals-container', list);
+
+            const pct = (v, max) => Math.min((v/max)*100, 100);
+            html('diet-macros-summary', `
+                <div class="card text-center"><div class="text-secondary text-sm">Kalorie</div><div class="text-lg">${Math.round(kc)} / ${state.goals.calories}</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(kc, state.goals.calories)}%"></div></div></div>
+                <div class="card text-center"><div class="text-secondary text-sm">Białko</div><div class="text-lg">${Math.round(p)} / ${state.goals.protein}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(p, state.goals.protein)}%"></div></div></div>
+                <div class="card text-center"><div class="text-secondary text-sm">Węgle</div><div class="text-lg">${Math.round(c)} / ${state.goals.carbs}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(c, state.goals.carbs)}%"></div></div></div>
+                <div class="card text-center"><div class="text-secondary text-sm">Tłuszcze</div><div class="text-lg">${Math.round(f)} / ${state.goals.fat}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(f, state.goals.fat)}%"></div></div></div>
+            `);
+            lucide.createIcons();
+        }
+        async function deleteMeal(id, dateStr) {
+            if(!confirm("Usunąć?")) return;
+            await supabase.from('meals').delete().eq('id', id);
+            loadDietForDate(dateStr); showToast("Usunięto");
+        }
+
+        // Water
+        async function loadWaterForDate(dateStr) {
+            html('water-date-label', dateStr === formatDate(new Date()) ? 'Dzisiaj' : dateStr);
+            const { data } = await supabase.from('water_logs').select('*').eq('log_date', dateStr).eq('user_id', state.user.id);
+            let total = 0;
+            (data||[]).forEach(w => total += w.amount_ml);
+            updateWaterUI(total);
+        }
+        function updateWaterUI(current) {
+            state.water = current;
+            html('water-current-text', current); html('water-goal-text', state.goals.water);
+            let pct = Math.min((current/state.goals.water)*100, 100);
+            let bar = $('water-progress-bar');
+            bar.style.width = pct + '%';
+            bar.className = 'progress-fill ' + (pct >= 100 ? 'success' : '');
+        }
+        async function addWater(amount) {
+            const todayStr = formatDate(state.date);
+            const { error } = await supabase.from('water_logs').insert([{ user_id: state.user.id, log_date: todayStr, amount_ml: amount }]);
+            if(!error) { updateWaterUI(state.water + amount); showToast(`Dodano ${amount}ml`); }
+        }
+
+        // Workouts
+        async function loadWorkoutsView() {
+            setVal('wo-date', formatDate(state.date));
+            const { data } = await supabase.from('workouts').select('*').eq('user_id', state.user.id).order('workout_date', { ascending: false });
+            const today = formatDate(new Date());
+            
+            const upcoming = (data||[]).filter(w => w.workout_date >= today && w.status !== 'completed');
+            const history = (data||[]).filter(w => w.workout_date < today || w.status === 'completed').slice(0, 10);
+            
+            const renderWList = (list) => list.length === 0 ? '<p class="text-secondary">Brak danych.</p>' : list.map(w => `
+                <div class="list-item cursor-pointer" onclick="openExecuteWorkout('${w.id}')">
+                    <div>
+                        <strong>${w.name}</strong> (${w.workout_type})
+                        <div class="text-sm text-secondary">${w.workout_date} ${w.start_time ? w.start_time.substring(0,5) : ''} | Status: ${w.status}</div>
+                    </div>
+                    <i data-lucide="chevron-right"></i>
+                </div>
+            `).join('');
+            
+            html('workouts-upcoming-list', renderWList(upcoming));
+            html('workouts-history-list', renderWList(history));
+            lucide.createIcons();
+        }
+        async function saveWorkout(e) {
+            e.preventDefault();
+            const w = {
+                user_id: state.user.id, name: val('wo-name'), workout_date: val('wo-date'),
+                start_time: val('wo-time') || null, workout_type: val('wo-type'),
+                duration_minutes: parseInt(val('wo-duration')) || null, status: val('wo-status')
+            };
+            const { error } = await supabase.from('workouts').insert([w]);
+            if(!error) { closeModal('modal-workout'); showToast("Trening zapisany"); loadWorkoutsView(); }
+        }
+
+        // Exercises DB
+        async function loadExercises() {
+            const { data } = await supabase.from('exercises').select('*').eq('user_id', state.user.id);
+            state.exercises = data || [];
+        }
+        function renderExercises() {
+            const q = val('exercise-search').toLowerCase();
+            const filtered = state.exercises.filter(e => e.name.toLowerCase().includes(q));
+            html('exercises-grid', filtered.map(e => `
+                <div class="card p-4">
+                    <strong>${e.name}</strong>
+                    <div class="text-sm text-secondary mb-2">${e.muscle_group}</div>
+                    <p class="text-sm">${e.description || ''}</p>
+                    <button class="btn btn-outline btn-sm mt-2" onclick="deleteExercise('${e.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i> Usuń</button>
+                </div>
+            `).join(''));
+            lucide.createIcons();
+            
+            const sel = $('exec-add-exercise-select');
+            if(sel) {
+                sel.innerHTML = '<option value="">Wybierz ćwiczenie...</option>' + state.exercises.map(e => `<option value="${e.id}">${e.name} (${e.muscle_group})</option>`).join('');
+            }
+        }
+        async function saveExercise(e) {
+            e.preventDefault();
+            const ex = { user_id: state.user.id, name: val('ex-name'), muscle_group: val('ex-muscle'), description: val('ex-desc') };
+            const { data, error } = await supabase.from('exercises').insert([ex]).select();
+            if(!error) { state.exercises.push(data[0]); renderExercises(); closeModal('modal-exercise'); showToast("Zapisano ćwiczenie"); }
+        }
+        async function deleteExercise(id) {
+            if(!confirm("Usunąć ćwiczenie?")) return;
+            await supabase.from('exercises').delete().eq('id', id);
+            state.exercises = state.exercises.filter(e => e.id !== id);
+            renderExercises(); showToast("Usunięto");
+        }
+
+        // Workout Execution (Sets & Reps)
+        async function openExecuteWorkout(id) {
+            currentActiveWorkoutId = id;
+            openModal('modal-execute-workout');
+            html('exec-wo-exercises', '<div class="text-center p-4"><div class="spinner"></div></div>');
+            
+            const { data: wo } = await supabase.from('workouts').select('*').eq('id', id).single();
+            if(wo) html('exec-wo-title', `Trening: ${wo.name}`);
+            
+            loadWorkoutExercises();
+        }
+        
+        async function loadWorkoutExercises() {
+            if(!currentActiveWorkoutId) return;
+            // Fetch mapping
+            const { data: weList } = await supabase.from('workout_exercises').select('*, exercises(*)').eq('workout_id', currentActiveWorkoutId).order('exercise_order');
+            
+            if(!weList || weList.length === 0) {
+                html('exec-wo-exercises', '<p class="text-secondary text-center p-4">Brak dodanych ćwiczeń. Wybierz ćwiczenie z listy powyżej.</p>');
+                return;
+            }
+
+            // Fetch sets
+            const weIds = weList.map(w => w.id);
+            const { data: sets } = await supabase.from('workout_sets').select('*').in('workout_exercise_id', weIds).order('set_number');
+            
+            let h = '';
+            weList.forEach((we, idx) => {
+                const exSets = (sets || []).filter(s => s.workout_exercise_id === we.id);
+                h += `
+                <div class="card p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4>${idx+1}. ${we.exercises.name}</h4>
+                        <button onclick="removeWorkoutExercise('${we.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i></button>
+                    </div>
+                    <table class="data-table text-sm mb-2">
+                        <thead><tr><th width="40px">Seria</th><th>kg</th><th>Powt.</th><th width="40px">Gotowe</th></tr></thead>
+                        <tbody>
+                            ${exSets.map(s => `
+                                <tr>
+                                    <td class="text-center">${s.set_number}</td>
+                                    <td><input type="number" step="0.5" value="${s.weight||0}" id="w-${s.id}" class="mb-0" style="padding:4px"></td>
+                                    <td><input type="number" value="${s.repetitions||0}" id="r-${s.id}" class="mb-0" style="padding:4px"></td>
+                                    <td class="text-center">
+                                        <input type="checkbox" id="c-${s.id}" ${s.completed ? 'checked' : ''} onchange="updateSet('${s.id}')" style="width:20px;height:20px">
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="flex gap-2">
+                        <button class="btn btn-outline btn-sm" onclick="addSet('${we.id}', ${exSets.length + 1})"><i data-lucide="plus"></i> Seria</button>
+                        <button class="btn btn-outline btn-sm" onclick="startTimer(90)"><i data-lucide="timer"></i> 90s</button>
+                        <button class="btn btn-outline btn-sm" onclick="startTimer(120)"><i data-lucide="timer"></i> 120s</button>
+                    </div>
+                </div>`;
+            });
+            html('exec-wo-exercises', h);
+            lucide.createIcons();
+        }
+
+        async function addExerciseToWorkout() {
+            const eid = val('exec-add-exercise-select');
+            if(!eid || !currentActiveWorkoutId) return;
+            const { data: countData } = await supabase.from('workout_exercises').select('id', { count: 'exact' }).eq('workout_id', currentActiveWorkoutId);
+            const order = (countData?.length || 0) + 1;
+            
+            const { data, error } = await supabase.from('workout_exercises').insert([{ workout_id: currentActiveWorkoutId, exercise_id: eid, exercise_order: order }]).select();
+            if(!error) {
+                // Auto add 1 set
+                await supabase.from('workout_sets').insert([{ workout_exercise_id: data[0].id, set_number: 1, weight: 0, repetitions: 0 }]);
+                loadWorkoutExercises();
+                setVal('exec-add-exercise-select', '');
+            }
+        }
+        
+        async function removeWorkoutExercise(weId) {
+            if(!confirm("Usunąć to ćwiczenie z treningu?")) return;
+            await supabase.from('workout_exercises').delete().eq('id', weId);
+            loadWorkoutExercises();
+        }
+
+        async function addSet(weId, num) {
+            await supabase.from('workout_sets').insert([{ workout_exercise_id: weId, set_number: num, weight: 0, repetitions: 0 }]);
+            loadWorkoutExercises();
+        }
+
+        async function updateSet(setId) {
+            const w = parseFloat(val(`w-${setId}`)) || 0;
+            const r = parseInt(val(`r-${setId}`)) || 0;
+            const c = $(`c-${setId}`).checked;
+            await supabase.from('workout_sets').update({ weight: w, repetitions: r, completed: c }).eq('id', setId);
+            if(c) startTimer(90); // Auto start timer on set complete
+        }
+
+        async function completeWorkout() {
+            if(!currentActiveWorkoutId) return;
+            await supabase.from('workouts').update({ status: 'completed' }).eq('id', currentActiveWorkoutId);
+            showToast("Trening zakończony! Dobra robota!");
+            closeModal('modal-execute-workout');
+            loadWorkoutsView();
+            if($('view-dashboard').classList.contains('hidden')===false) loadDashboard();
+        }
+
+        // Rest Timer
+        function startTimer(seconds) {
+            stopTimer();
+            show('rest-timer-container');
+            let timeLeft = seconds;
+            const updateUI = () => {
+                const m = Math.floor(timeLeft/60).toString().padStart(2,'0');
+                const s = (timeLeft%60).toString().padStart(2,'0');
+                html('rest-timer-display', `${m}:${s}`);
+            };
+            updateUI();
+            restTimerInterval = setInterval(() => {
+                timeLeft--;
+                updateUI();
+                if(timeLeft <= 0) {
+                    stopTimer();
+                    showToast("Koniec przerwy! Wracaj do ćwiczeń.", "warning");
+                    // Opcjonalnie zagraj dźwięk (pomijamy dla uproszczenia)
+                }
+            }, 1000);
+        }
+        function stopTimer() {
+            if(restTimerInterval) clearInterval(restTimerInterval);
+            hide('rest-timer-container');
+        }
+
+        // Calendar
+        function renderCalendar() {
+            const d = state.calendarDate;
+            const month = d.getMonth();
+            const year = d.getFullYear();
+            
+            const monthNames = ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"];
+            html('calendar-month-year', `${monthNames[month]} ${year}`);
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const startPad = firstDay === 0 ? 6 : firstDay - 1;
+            
+            let htmlStr = '';
+            for(let i=0; i<startPad; i++) htmlStr += '<div class="calendar-day empty"></div>';
+            
+            for(let i=1; i<=daysInMonth; i++) {
+                const curDate = new Date(year, month, i);
+                const isToday = curDate.toDateString() === new Date().toDateString();
+                const dateStr = formatDate(curDate);
+                
+                htmlStr += `
+                    <div class="calendar-day ${isToday ? 'today' : ''}" onclick="openDayDetails('${dateStr}')" id="cal-day-${dateStr}">
+                        <span class="day-number">${i}</span>
+                        <div class="cal-data-holder text-sm"></div>
+                    </div>
+                `;
+            }
+            html('calendar-days', htmlStr);
+            populateCalendarData(year, month);
+        }
+        
+        async function populateCalendarData(year, month) {
+            const start = `${year}-${(month+1).toString().padStart(2,'0')}-01`;
+            const end = `${year}-${(month+1).toString().padStart(2,'0')}-31`;
+            
+            // Promise all to fetch monthly data
+            const [mealsReq, workoutsReq, waterReq] = await Promise.all([
+                supabase.from('meals').select('meal_date, calories').eq('user_id', state.user.id).gte('meal_date', start).lte('meal_date', end),
+                supabase.from('workouts').select('workout_date, status').eq('user_id', state.user.id).gte('workout_date', start).lte('workout_date', end),
+                supabase.from('water_logs').select('log_date, amount_ml').eq('user_id', state.user.id).gte('log_date', start).lte('log_date', end)
+            ]);
+            
+            const dataMap = {};
+            (mealsReq.data||[]).forEach(m => {
+                if(!dataMap[m.meal_date]) dataMap[m.meal_date] = { kcal: 0 };
+                dataMap[m.meal_date].kcal += m.calories;
+            });
+            (workoutsReq.data||[]).forEach(w => {
+                if(!dataMap[w.workout_date]) dataMap[w.workout_date] = {};
+                dataMap[w.workout_date].workout = w.status === 'completed' ? 'success' : 'warning';
+            });
+            (waterReq.data||[]).forEach(w => {
+                if(!dataMap[w.log_date]) dataMap[w.log_date] = {};
+                dataMap[w.log_date].water = true;
+            });
+
+            for (const [date, info] of Object.entries(dataMap)) {
+                const el = document.querySelector(`#cal-day-${date} .cal-data-holder`);
+                if(el) {
+                    let content = '';
+                    if(info.kcal) {
+                        let col = info.kcal > state.goals.calories ? 'var(--danger)' : 'var(--success)';
+                        content += `<div class="day-indicator"><span class="status-dot" style="background:${col}"></span> ${Math.round(info.kcal)} kcal</div>`;
+                    }
+                    if(info.workout) {
+                        let col = info.workout === 'success' ? 'var(--success)' : 'var(--warning)';
+                        content += `<div class="day-indicator"><span class="status-dot" style="background:${col}"></span> Trening</div>`;
+                    }
+                    if(info.water) {
+                        content += `<div class="day-indicator"><span class="status-dot" style="background:var(--primary)"></span> Woda</div>`;
+                    }
+                    el.innerHTML = content;
+                }
+            }
+        }
+        
+        function changeMonth(dir) {
+            state.calendarDate.setMonth(state.calendarDate.getMonth() + dir);
+            renderCalendar();
+        }
+        function setCalendarToToday() {
+            state.calendarDate = new Date();
+            renderCalendar();
+        }
+
+        let tempSelectedDay = null;
+        function openDayDetails(dateStr) {
+            tempSelectedDay = dateStr;
+            html('day-modal-title', `Szczegóły: ${dateStr}`);
+            html('day-modal-body', `<div class="text-center p-4"><div class="spinner"></div></div>`);
+            openModal('modal-day');
+            
+            // Fetch day summary
+            Promise.all([
+                supabase.from('meals').select('*').eq('meal_date', dateStr).eq('user_id', state.user.id),
+                supabase.from('workouts').select('*').eq('workout_date', dateStr).eq('user_id', state.user.id),
+                supabase.from('water_logs').select('*').eq('log_date', dateStr).eq('user_id', state.user.id)
+            ]).then(([m, w, wt]) => {
+                let kc=0; (m.data||[]).forEach(x=>kc+=x.calories);
+                let water=0; (wt.data||[]).forEach(x=>water+=x.amount_ml);
+                
+                let body = `<div class="grid-2">
+                    <div class="card p-3"><strong>🍽️ Dieta:</strong> ${m.data.length} posiłków<br>${Math.round(kc)} / ${state.goals.calories} kcal</div>
+                    <div class="card p-3"><strong>💧 Woda:</strong><br>${water} / ${state.goals.water} ml</div>
+                </div>`;
+                if(w.data && w.data.length > 0) {
+                    body += `<div class="card p-3 mt-2"><strong>🏋️ Trening:</strong> ${w.data[0].name} (${w.data[0].status})</div>`;
+                } else {
+                    body += `<div class="card p-3 mt-2 text-secondary">Brak treningu</div>`;
+                }
+                html('day-modal-body', body);
+            });
+        }
+        function goToDayDetails() {
+            closeModal('modal-day');
+            state.date = new Date(tempSelectedDay);
+            navigate('dashboard');
+        }
+
+        // Weight
+        async function loadWeight() {
+            const { data } = await supabase.from('weight_logs').select('*').eq('user_id', state.user.id).order('log_date', { ascending: true });
+            state.weight = data || [];
+            
+            html('weight-history-body', state.weight.map(w => `
+                <tr><td>${w.log_date}</td><td><strong>${w.weight} kg</strong></td><td>${w.notes||''}</td>
+                <td><button onclick="deleteWeight('${w.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i></button></td></tr>
+            `).reverse().join(''));
+            lucide.createIcons();
+            
+            // Chart
+            if(state.charts.weight) state.charts.weight.destroy();
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            state.charts.weight = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: state.weight.map(w => w.log_date),
+                    datasets: [{ label: 'Waga (kg)', data: state.weight.map(w => w.weight), borderColor: '#3b82f6', tension: 0.1, fill: false }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+        async function saveWeight(e) {
+            e.preventDefault();
+            const payload = { user_id: state.user.id, log_date: val('weight-date'), weight: parseFloat(val('weight-val')), notes: val('weight-notes') };
+            const { error } = await supabase.from('weight_logs').insert([payload]);
+            if(!error) { closeModal('modal-weight'); showToast("Zapisano wagę"); loadWeight(); }
+        }
+        async function deleteWeight(id) {
+            if(!confirm("Usunąć?")) return;
+            await supabase.from('weight_logs').delete().eq('id', id);
+            loadWeight(); showToast("Usunięto");
+        }
+
+        // Stats
+        async function loadStats() {
+            const days = parseInt(val('stats-range'));
+            const end = new Date();
+            const start = new Date(); start.setDate(end.getDate() - days);
+            const startStr = formatDate(start); const endStr = formatDate(end);
+            
+            const { data: meals } = await supabase.from('meals').select('meal_date, calories, protein, carbs, fat').eq('user_id', state.user.id).gte('meal_date', startStr).lte('meal_date', endStr);
+            
+            // Group by date
+            const grouped = {};
+            (meals||[]).forEach(m => {
+                if(!grouped[m.meal_date]) grouped[m.meal_date] = { k:0, p:0, c:0, f:0 };
+                grouped[m.meal_date].k += m.calories;
+                grouped[m.meal_date].p += m.protein;
+                grouped[m.meal_date].c += m.carbs;
+                grouped[m.meal_date].f += m.fat;
+            });
+            
+            const labels = Object.keys(grouped).sort();
+            const dataKcal = labels.map(d => grouped[d].k);
+            
+            if(state.charts.kcal) state.charts.kcal.destroy();
+            state.charts.kcal = new Chart($('chart-calories').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Spożyte Kcal', data: dataKcal, backgroundColor: '#3b82f6' },
+                        { label: 'Cel Kcal', data: labels.map(()=>state.goals.calories), type: 'line', borderColor: '#eab308', borderDash: [5,5], fill: false }
+                    ]
+                }
+            });
+
+            // Avg Macros
+            let avgP = 0, avgC = 0, avgF = 0;
+            const daysCount = labels.length || 1;
+            labels.forEach(d => { avgP += grouped[d].p; avgC += grouped[d].c; avgF += grouped[d].f; });
+            avgP /= daysCount; avgC /= daysCount; avgF /= daysCount;
+            
+            if(state.charts.macros) state.charts.macros.destroy();
+            state.charts.macros = new Chart($('chart-macros').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Białko', 'Węglowodany', 'Tłuszcze'],
+                    datasets: [{ data: [avgP, avgC, avgF], backgroundColor: ['#22c55e', '#3b82f6', '#eab308'] }]
+                }
+            });
+        }
+
+        // Settings & Utils
+        function changeTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+        
+        function exportData() {
+            // Simplified CSV export of meals
+            supabase.from('meals').select('*').eq('user_id', state.user.id).then(({data}) => {
+                if(!data || data.length === 0) return alert("Brak danych do eksportu.");
+                const headers = Object.keys(data[0]).join(',');
+                const rows = data.map(row => Object.values(row).map(v => `"${v}"`).join(',')).join('\n');
+                const csv = headers + '\n' + rows;
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'fittracker_meals.csv';
+                a.click();
+            });
+        }
+
+        async function deleteAccount() {
+            if(!confirm("CZY NA PEWNO CHCESZ USUNĄĆ KONTO? Te operacja jest nieodwracalna!")) return;
+            // Wymaga konfiguracji w Supabase (RPC lub rls/cascade). Tutaj frontendowa próba (może być zablokowana przez RLS bez endpointu backendowego):
+            alert("Funkcja usuwania konta musi zostać potwierdzona e-mailem. (Wymaga konfiguracji w panelu Supabase)");
+        }
+
+        // Start
+        window.onload = () => {
+            // Setup default dates in forms
+            const today = formatDate(new Date());
+            setVal('meal-date', today);
+            setVal('weight-date', today);
+            setVal('wo-date', today);
+            checkSession();
+        };
+    </script>
+</body>
+</html>
