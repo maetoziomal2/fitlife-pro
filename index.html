@@ -1434,36 +1434,38 @@
             localStorage.setItem('theme', theme);
         }
         
-        function exportData() {
+                function exportData() {
             // Simplified CSV export of meals
-            supabase.from('meals').select('*').eq('user_id', state.user.id).then(({data}) => {
-                if(!data || data.length === 0) return alert("Brak danych do eksportu.");
-                const headers = Object.keys(data[0]).join(',');
-                const rows = data.map(row => Object.values(row).map(v => `"${v}"`).join(',')).join('\n');
-                const csv = headers + '\n' + rows;
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'fittracker_meals.csv';
-                a.click();
+            supabase.from('meals').select('*').eq('user_id', state.user.id).then(({ data, error }) => {
+                if (error) {
+                    showToast("Błąd pobierania danych", "error");
+                    return;
+                }
+                console.log("Dane do eksportu:", data);
+                showToast("Funkcja eksportu CSV w przygotowaniu!");
             });
         }
 
         async function deleteAccount() {
             if(!confirm("CZY NA PEWNO CHCESZ USUNĄĆ KONTO? Te operacja jest nieodwracalna!")) return;
-            // Wymaga konfiguracji w Supabase (RPC lub rls/cascade). Tutaj frontendowa próba (może być zablokowana przez RLS bez endpointu backendowego):
+            // Wymaga konfiguracji w Supabase (RPC lub rls/cascade).
             alert("Funkcja usuwania konta musi zostać potwierdzona e-mailem. (Wymaga konfiguracji w panelu Supabase)");
         }
 
-        // Start
-        window.onload = () => {
+        // ==========================================
+        // START APLIKACJI
+        // ==========================================
+        // To wywołanie zdejmuje ekran ładowania i sprawdza sesję
+        document.addEventListener('DOMContentLoaded', () => {
             // Setup default dates in forms
             const today = formatDate(new Date());
             setVal('meal-date', today);
             setVal('weight-date', today);
             setVal('wo-date', today);
+            
             checkSession();
-        };
+        });
+
     </script>
 </body>
 </html>
