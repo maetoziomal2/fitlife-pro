@@ -3,142 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diet & Workout Tracker</title>
+    <title>FitTracker Pro</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #f8fafc; --bg-surface: #ffffff; --bg-surface-hover: #f1f5f9;
-            --text-primary: #0f172a; --text-secondary: #64748b;
-            --primary: #3b82f6; --primary-hover: #2563eb;
-            --success: #22c55e; --warning: #eab308; --danger: #ef4444;
-            --border: #e2e8f0; --radius-md: 8px; --radius-lg: 12px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-            --sidebar-width: 250px; --header-height: 60px;
+            /* Nowoczesna paleta kolorów */
+            --bg-base: #f1f5f9; 
+            --bg-surface: #ffffff; 
+            --bg-surface-hover: #f8fafc;
+            --text-primary: #0f172a; 
+            --text-secondary: #64748b;
+            --primary: #4f46e5; /* Indigo */
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --success: #10b981; 
+            --warning: #f59e0b; 
+            --danger: #ef4444;
+            --border: #e2e8f0; 
+            --radius-sm: 8px;
+            --radius-md: 12px; 
+            --radius-lg: 20px;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.02); 
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.025);
+            --shadow-float: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            --sidebar-width: 260px; 
+            --header-height: 70px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         [data-theme="dark"] {
-            --bg-base: #0f172a; --bg-surface: #1e293b; --bg-surface-hover: #334155;
-            --text-primary: #f8fafc; --text-secondary: #94a3b8;
+            --bg-base: #0f172a; 
+            --bg-surface: #1e293b; 
+            --bg-surface-hover: #334155;
+            --text-primary: #f8fafc; 
+            --text-secondary: #94a3b8;
             --border: #334155;
+            --primary-light: #3730a3;
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.3);
         }
+        
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-base); color: var(--text-primary); overflow-x: hidden; }
-        a { text-decoration: none; color: inherit; }
+        body { background-color: var(--bg-base); color: var(--text-primary); overflow-x: hidden; transition: background-color 0.3s; }
+        a { text-decoration: none; color: var(--primary); font-weight: 500; transition: var(--transition); }
+        a:hover { color: var(--primary-hover); }
         ul { list-style: none; }
         button { cursor: pointer; border: none; outline: none; background: none; font-family: inherit; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg-base); color: var(--text-primary); margin-bottom: 10px; }
+        
+        /* Formularze */
+        input, select, textarea { 
+            width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); 
+            border-radius: var(--radius-md); background: var(--bg-surface); 
+            color: var(--text-primary); margin-bottom: 12px; 
+            transition: var(--transition); font-size: 0.95rem;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            outline: none;
+        }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
         
         /* Layout */
         #app { display: none; height: 100vh; display: flex; }
-        .sidebar { width: var(--sidebar-width); background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 0; transition: 0.3s; z-index: 50; }
-        .sidebar-logo { font-size: 1.2rem; font-weight: 700; padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        .nav-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; color: var(--text-secondary); font-weight: 500; cursor: pointer; transition: 0.2s; }
-        .nav-item:hover, .nav-item.active { background: var(--bg-surface-hover); color: var(--primary); border-right: 3px solid var(--primary); }
+        .sidebar { width: var(--sidebar-width); background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 0; transition: 0.3s; z-index: 50; }
+        .sidebar-logo { font-size: 1.4rem; font-weight: 800; padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; color: var(--primary); letter-spacing: -0.5px; }
+        
+        .nav-item { padding: 14px 24px; display: flex; align-items: center; gap: 14px; color: var(--text-secondary); font-weight: 500; cursor: pointer; transition: var(--transition); margin: 4px 12px; border-radius: var(--radius-md); }
+        .nav-item:hover { background: var(--bg-surface-hover); color: var(--text-primary); transform: translateX(4px); }
+        .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); transform: none; }
+        
         .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-        .header { height: var(--header-height); background: var(--bg-surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; position: sticky; top: 0; z-index: 40; }
-        .content-area { padding: 30px; flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .header { height: var(--header-height); background: var(--bg-base); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; position: sticky; top: 0; z-index: 40; backdrop-filter: blur(10px); background: rgba(var(--bg-base), 0.8); }
+        .content-area { padding: 32px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; animation: fadeIn 0.4s ease; }
         
-        /* Components */
-        .btn { padding: 10px 16px; border-radius: var(--radius-md); font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); }
-        .btn-outline { border: 1px solid var(--border); color: var(--text-primary); }
-        .btn-outline:hover { background: var(--bg-surface-hover); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Przyciski */
+        .btn { padding: 12px 20px; border-radius: var(--radius-md); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition); font-size: 0.95rem; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35); transform: translateY(-1px); }
+        .btn-outline { border: 1.5px solid var(--border); color: var(--text-primary); background: var(--bg-surface); }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
         .btn-danger { background: var(--danger); color: white; }
-        .card { background: var(--bg-surface); border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+        .btn-sm { padding: 8px 14px; font-size: 0.85rem; }
         
-        /* Dashboard & Grid */
-        .grid-1 { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        /* Karty */
+        .card { background: var(--bg-surface); border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-md); margin-bottom: 24px; transition: var(--transition); }
+        .card:hover { box-shadow: var(--shadow-float); }
+        h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 20px; color: var(--text-primary); letter-spacing: -0.5px; }
+        h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         
-        .progress-bar { width: 100%; height: 8px; background: var(--bg-base); border-radius: 4px; overflow: hidden; margin-top: 8px; }
-        .progress-fill { height: 100%; background: var(--primary); transition: width 0.5s; }
-        .progress-fill.success { background: var(--success); }
-        .progress-fill.warning { background: var(--warning); }
-        .progress-fill.danger { background: var(--danger); }
+        /* Siatki */
+        .grid-1 { display: grid; grid-template-columns: 1fr; gap: 24px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
         
-        /* Auth Screen */
-        #auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .auth-box { background: var(--bg-surface); padding: 40px; border-radius: var(--radius-lg); width: 100%; max-width: 400px; box-shadow: var(--shadow-md); text-align: center; }
+        /* Paski postępu */
+        .progress-bar { width: 100%; height: 10px; background: var(--bg-base); border-radius: 5px; overflow: hidden; margin-top: 12px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #818cf8); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 5px; }
+        .progress-fill.success { background: linear-gradient(90deg, var(--success), #34d399); }
+        .progress-fill.warning { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+        .progress-fill.danger { background: linear-gradient(90deg, var(--danger), #f87171); }
         
-        /* Modals */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; padding: 20px; }
-        .modal-overlay.active { display: flex; }
-        .modal-content { background: var(--bg-surface); width: 100%; max-width: 500px; border-radius: var(--radius-lg); max-height: 90vh; display: flex; flex-direction: column; }
-        .modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; overflow-y: auto; }
-        .modal-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+        /* Statystyki Dashboardu */
+        .stat-card { text-align: center; padding: 20px; }
+        .stat-card .text-lg { font-size: 1.5rem; font-weight: 700; margin-top: 8px; color: var(--text-primary); }
         
-        /* Calendar */
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-        .calendar-day-header { text-align: center; font-weight: 600; padding: 10px 0; color: var(--text-secondary); }
-        .calendar-day { background: var(--bg-surface); border: 1px solid var(--border); min-height: 100px; padding: 10px; border-radius: var(--radius-md); cursor: pointer; transition: 0.2s; }
-        .calendar-day:hover { border-color: var(--primary); }
-        .calendar-day.today { border: 2px solid var(--primary); }
+        /* Modale - NAPRAWIONE */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 100; padding: 20px; backdrop-filter: blur(4px); opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content { background: var(--bg-surface); width: 100%; max-width: 550px; border-radius: var(--radius-lg); max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-float); transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        
+        .modal-header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 1.4rem; }
+        .modal-header button { color: var(--text-secondary); transition: var(--transition); border-radius: 50%; padding: 4px; }
+        .modal-header button:hover { background: var(--bg-base); color: var(--danger); transform: rotate(90deg); }
+        
+        .modal-body { padding: 24px; overflow-y: auto; }
+        .modal-footer { padding: 20px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg-base); border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); }
+        
+        /* Kalendarz */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .calendar-day-header { text-align: center; font-weight: 600; padding: 12px 0; color: var(--text-secondary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+        .calendar-day { background: var(--bg-surface); border: 1.5px solid var(--border); min-height: 110px; padding: 12px; border-radius: var(--radius-md); cursor: pointer; transition: var(--transition); }
+        .calendar-day:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+        .calendar-day.today { border: 2px solid var(--primary); background: var(--primary-light); }
         .calendar-day.empty { background: transparent; border: none; cursor: default; }
-        .day-number { font-weight: 600; margin-bottom: 5px; display: block; }
-        .day-indicator { font-size: 0.75rem; display: flex; align-items: center; gap: 4px; margin-top: 4px; color: var(--text-secondary); }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .calendar-day.empty:hover { transform: none; box-shadow: none; }
+        .day-number { font-weight: 700; margin-bottom: 8px; display: block; font-size: 1.1rem; }
+        .day-indicator { font-size: 0.75rem; display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--text-secondary); font-weight: 500; background: var(--bg-base); padding: 4px 8px; border-radius: 4px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
         
-        /* Tables & Lists */
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
-        .data-table th { color: var(--text-secondary); font-weight: 500; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); }
-        .list-item:last-child { border-bottom: none; }
+        /* Tabele i Listy */
+        .data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .data-table th, .data-table td { padding: 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        .data-table th { color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 12px; transition: var(--transition); }
+        .list-item:hover { border-color: var(--primary); background: var(--bg-surface-hover); }
         
-        /* Toasts */
-        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: var(--bg-surface); border-left: 4px solid var(--primary); padding: 15px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s forwards; }
+        /* Powiadomienia (Toasts) */
+        #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
+        .toast { background: var(--bg-surface); color: var(--text-primary); border-left: 5px solid var(--primary); padding: 16px 24px; border-radius: var(--radius-md); box-shadow: var(--shadow-float); display: flex; align-items: center; gap: 12px; animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; font-weight: 500; }
         .toast.success { border-color: var(--success); }
         .toast.error { border-color: var(--danger); }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.warning { border-color: var(--warning); }
+        @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
-        /* Utilities */
+        /* Użyteczne klasy */
         .hidden { display: none !important; }
         .text-center { text-align: center; }
         .text-sm { font-size: 0.875rem; }
-        .text-lg { font-size: 1.125rem; font-weight: 600; }
+        .text-secondary { color: var(--text-secondary); }
         .flex { display: flex; } .flex-col { display: flex; flex-direction: column; }
         .items-center { align-items: center; } .justify-between { justify-content: space-between; } .justify-center { justify-content: center; }
         .gap-2 { gap: 8px; } .gap-4 { gap: 16px; }
         .mt-2 { margin-top: 8px; } .mt-4 { margin-top: 16px; } .mb-2 { margin-bottom: 8px; } .mb-4 { margin-bottom: 16px; }
+        .w-100 { width: 100%; }
         
         /* Mobile */
         .mobile-nav-toggle { display: none; }
         @media (max-width: 768px) {
-            .sidebar { position: fixed; left: -100%; top: 0; bottom: 0; width: 80%; max-width: 300px; box-shadow: var(--shadow-md); }
+            .sidebar { position: fixed; left: -100%; top: 0; bottom: 0; width: 280px; box-shadow: var(--shadow-float); }
             .sidebar.open { left: 0; }
-            .mobile-nav-toggle { display: block; }
-            .calendar-grid { grid-template-columns: repeat(7, 1fr); gap: 2px; }
-            .calendar-day { min-height: 60px; padding: 4px; font-size: 0.8rem; }
-            .day-indicator { font-size: 0.65rem; }
+            .mobile-nav-toggle { display: block; padding: 8px; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border); }
+            .content-area { padding: 16px; }
+            .header { padding: 0 16px; }
+            .calendar-grid { gap: 4px; }
+            .calendar-day { min-height: 80px; padding: 6px; font-size: 0.9rem; }
+            .day-indicator { font-size: 0.7rem; padding: 2px 4px; flex-wrap: wrap; }
+            .card { padding: 16px; }
         }
         
         /* Loading Overlay */
-        #global-loader { position: fixed; inset: 0; background: var(--bg-base); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
-        .spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        #global-loader { position: fixed; inset: 0; background: var(--bg-base); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; }
+        .spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="global-loader"><div class="spinner"></div><div class="mt-4">Ładowanie aplikacji...</div></div>
+    <div id="global-loader"><div class="spinner"></div><div class="mt-4" style="font-weight: 600; color: var(--text-secondary);">Ładowanie FitTracker Pro...</div></div>
     
     <!-- AUTH SCREEN -->
     <div id="auth-screen" class="hidden">
-        <div class="auth-box">
-            <h2 class="mb-2"><i data-lucide="activity"></i> FitTracker Pro</h2>
-            <p class="text-sm text-secondary mb-4">Zaloguj się lub utwórz konto</p>
+        <div class="auth-box card" style="max-width: 420px; width: 90%;">
+            <h2 class="mb-2 flex justify-center items-center gap-2" style="color: var(--primary);"><i data-lucide="activity"></i> FitTracker Pro</h2>
+            <p class="text-sm text-secondary mb-4">Zaloguj się lub utwórz konto aby kontynuować</p>
             <form id="auth-form" onsubmit="handleAuth(event)">
-                <input type="email" id="auth-email" placeholder="Adres e-mail" required>
-                <input type="password" id="auth-password" placeholder="Hasło" required>
-                <button type="submit" class="btn btn-primary" style="width: 100%;" id="auth-btn">Zaloguj się</button>
-                <p class="mt-4 text-sm">
+                <label>Adres e-mail</label>
+                <input type="email" id="auth-email" placeholder="twoj@email.com" required>
+                <label>Hasło</label>
+                <input type="password" id="auth-password" placeholder="••••••••" required>
+                <button type="submit" class="btn btn-primary w-100 mt-2" id="auth-btn">Zaloguj się</button>
+                <p class="mt-4 text-center text-sm">
                     <a href="#" onclick="toggleAuthMode()" id="auth-toggle">Nie masz konta? Utwórz je.</a>
                 </p>
             </form>
@@ -150,20 +218,21 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
-                <i data-lucide="activity" style="color: var(--primary)"></i> FitTracker Pro
-                <button class="mobile-nav-toggle" onclick="toggleSidebar()" style="margin-left: auto;"><i data-lucide="x"></i></button>
+                <i data-lucide="activity"></i> FitTracker Pro
+                <button class="mobile-nav-toggle" onclick="toggleSidebar()" style="margin-left: auto; border:none; background:none;"><i data-lucide="x"></i></button>
             </div>
-            <ul class="mt-4">
-                <li class="nav-item active" data-target="dashboard" onclick="navigate('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard</li>
+            <ul class="mt-2">
+                <li class="nav-item active" data-target="dashboard" onclick="navigate('dashboard')"><i data-lucide="layout-dashboard"></i> Przegląd dnia</li>
                 <li class="nav-item" data-target="calendar" onclick="navigate('calendar')"><i data-lucide="calendar"></i> Kalendarz</li>
-                <li class="nav-item" data-target="diet" onclick="navigate('diet')"><i data-lucide="utensils"></i> Dieta & Posiłki</li>
+                <li class="nav-item" data-target="diet" onclick="navigate('diet')"><i data-lucide="utensils"></i> Dieta i Posiłki</li>
                 <li class="nav-item" data-target="products" onclick="navigate('products')"><i data-lucide="apple"></i> Baza Produktów</li>
-                <li class="nav-item" data-target="water" onclick="navigate('water')"><i data-lucide="droplet"></i> Woda</li>
+                <li class="nav-item" data-target="water" onclick="navigate('water')"><i data-lucide="droplet"></i> Nawodnienie</li>
                 <li class="nav-item" data-target="workouts" onclick="navigate('workouts')"><i data-lucide="dumbbell"></i> Treningi</li>
-                <li class="nav-item" data-target="exercises" onclick="navigate('exercises')"><i data-lucide="biceps-flexed"></i> Ćwiczenia</li>
-                <li class="nav-item" data-target="weight" onclick="navigate('weight')"><i data-lucide="scale"></i> Waga</li>
+                <li class="nav-item" data-target="exercises" onclick="navigate('exercises')"><i data-lucide="biceps-flexed"></i> Baza Ćwiczeń</li>
+                <li class="nav-item" data-target="weight" onclick="navigate('weight')"><i data-lucide="scale"></i> Pomiary wagi</li>
                 <li class="nav-item" data-target="stats" onclick="navigate('stats')"><i data-lucide="bar-chart-2"></i> Statystyki</li>
-                <li class="nav-item" data-target="goals" onclick="navigate('goals')"><i data-lucide="target"></i> Cele</li>
+                <li style="margin: 20px 24px; border-top: 1px solid var(--border);"></li>
+                <li class="nav-item" data-target="goals" onclick="navigate('goals')"><i data-lucide="target"></i> Moje Cele</li>
                 <li class="nav-item" data-target="settings" onclick="navigate('settings')"><i data-lucide="settings"></i> Ustawienia</li>
             </ul>
         </aside>
@@ -173,45 +242,47 @@
             <header class="header">
                 <div class="flex items-center gap-4">
                     <button class="mobile-nav-toggle" onclick="toggleSidebar()"><i data-lucide="menu"></i></button>
-                    <span id="current-date-display" class="font-medium"></span>
+                    <span id="current-date-display" style="font-weight: 600; color: var(--text-secondary);"></span>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button onclick="navigate('settings')" title="Ustawienia"><i data-lucide="user"></i> <span id="user-display-name"></span></button>
-                    <button onclick="logout()" title="Wyloguj"><i data-lucide="log-out"></i></button>
+                    <button class="btn btn-outline btn-sm flex items-center gap-2" onclick="navigate('settings')" title="Ustawienia">
+                        <i data-lucide="user" style="width: 16px; height: 16px;"></i> <span id="user-display-name"></span>
+                    </button>
+                    <button class="btn btn-outline btn-sm" onclick="logout()" title="Wyloguj">Wyloguj</button>
                 </div>
             </header>
 
             <div class="content-area">
                 <!-- VIEW: Dashboard -->
                 <div id="view-dashboard" class="view-section">
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mb-4" style="flex-wrap: wrap; gap: 10px;">
                         <h2>Dzisiejszy przegląd</h2>
-                        <div class="flex gap-2">
-                            <button class="btn btn-primary" onclick="openModal('modal-meal')"><i data-lucide="plus"></i> Posiłek</button>
-                            <button class="btn btn-outline" onclick="openModal('modal-water')"><i data-lucide="droplet"></i> Woda</button>
-                            <button class="btn btn-outline" onclick="openModal('modal-workout')"><i data-lucide="dumbbell"></i> Trening</button>
+                        <div class="flex gap-2" style="flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="openModal('modal-meal')"><i data-lucide="plus"></i> Dodaj Posiłek</button>
+                            <button class="btn btn-outline" onclick="openModal('modal-water')"><i data-lucide="droplet"></i> Dodaj Wodę</button>
+                            <button class="btn btn-outline" onclick="openModal('modal-workout')"><i data-lucide="dumbbell"></i> Zaplanuj Trening</button>
                         </div>
                     </div>
                     
                     <div class="grid-4 mb-4">
-                        <div class="card">
-                            <div class="text-sm text-secondary">Kalorie</div>
-                            <div class="text-lg"><span id="dash-kcal-current">0</span> / <span id="dash-kcal-goal">0</span> kcal</div>
+                        <div class="card stat-card">
+                            <div class="text-sm text-secondary font-semibold uppercase tracking-wide">Kalorie</div>
+                            <div class="text-lg"><span id="dash-kcal-current">0</span> <span class="text-secondary text-sm">/ <span id="dash-kcal-goal">0</span> kcal</span></div>
                             <div class="progress-bar"><div id="dash-kcal-bar" class="progress-fill"></div></div>
                         </div>
-                        <div class="card">
-                            <div class="text-sm text-secondary">Białko</div>
-                            <div class="text-lg"><span id="dash-protein-current">0</span> / <span id="dash-protein-goal">0</span> g</div>
+                        <div class="card stat-card">
+                            <div class="text-sm text-secondary font-semibold uppercase tracking-wide">Białko</div>
+                            <div class="text-lg"><span id="dash-protein-current">0</span> <span class="text-secondary text-sm">/ <span id="dash-protein-goal">0</span> g</span></div>
                             <div class="progress-bar"><div id="dash-protein-bar" class="progress-fill"></div></div>
                         </div>
-                        <div class="card">
-                            <div class="text-sm text-secondary">Węglowodany</div>
-                            <div class="text-lg"><span id="dash-carbs-current">0</span> / <span id="dash-carbs-goal">0</span> g</div>
+                        <div class="card stat-card">
+                            <div class="text-sm text-secondary font-semibold uppercase tracking-wide">Węglowodany</div>
+                            <div class="text-lg"><span id="dash-carbs-current">0</span> <span class="text-secondary text-sm">/ <span id="dash-carbs-goal">0</span> g</span></div>
                             <div class="progress-bar"><div id="dash-carbs-bar" class="progress-fill"></div></div>
                         </div>
-                        <div class="card">
-                            <div class="text-sm text-secondary">Tłuszcze</div>
-                            <div class="text-lg"><span id="dash-fat-current">0</span> / <span id="dash-fat-goal">0</span> g</div>
+                        <div class="card stat-card">
+                            <div class="text-sm text-secondary font-semibold uppercase tracking-wide">Tłuszcze</div>
+                            <div class="text-lg"><span id="dash-fat-current">0</span> <span class="text-secondary text-sm">/ <span id="dash-fat-goal">0</span> g</span></div>
                             <div class="progress-bar"><div id="dash-fat-bar" class="progress-fill"></div></div>
                         </div>
                     </div>
@@ -220,7 +291,7 @@
                         <div class="card">
                             <h3>🍽️ Dzisiejsze posiłki</h3>
                             <div id="dash-meals-list" class="mt-4 flex-col gap-2"></div>
-                            <button class="btn btn-outline mt-4 w-100" style="width:100%" onclick="navigate('diet')">Szczegóły diety</button>
+                            <button class="btn btn-outline mt-4 w-100" onclick="navigate('diet')">Szczegóły diety</button>
                         </div>
                         <div class="card">
                             <h3>🏋️ Dzisiejszy trening</h3>
@@ -235,28 +306,30 @@
                 <div id="view-calendar" class="view-section hidden">
                     <div class="calendar-header">
                         <h2>Kalendarz</h2>
-                        <div class="flex gap-4 items-center">
+                        <div class="flex gap-2 items-center">
                             <button class="btn btn-outline" onclick="changeMonth(-1)"><i data-lucide="chevron-left"></i></button>
-                            <h3 id="calendar-month-year"></h3>
+                            <h3 id="calendar-month-year" style="margin:0 10px; width: 140px; text-align: center;"></h3>
                             <button class="btn btn-outline" onclick="changeMonth(1)"><i data-lucide="chevron-right"></i></button>
                             <button class="btn btn-primary" onclick="setCalendarToToday()">Dzisiaj</button>
                         </div>
                     </div>
-                    <div class="calendar-grid">
-                        <div class="calendar-day-header">Pn</div><div class="calendar-day-header">Wt</div>
-                        <div class="calendar-day-header">Śr</div><div class="calendar-day-header">Cz</div>
-                        <div class="calendar-day-header">Pt</div><div class="calendar-day-header">So</div>
-                        <div class="calendar-day-header">Nd</div>
+                    <div class="card">
+                        <div class="calendar-grid">
+                            <div class="calendar-day-header">Pn</div><div class="calendar-day-header">Wt</div>
+                            <div class="calendar-day-header">Śr</div><div class="calendar-day-header">Cz</div>
+                            <div class="calendar-day-header">Pt</div><div class="calendar-day-header">So</div>
+                            <div class="calendar-day-header">Nd</div>
+                        </div>
+                        <div class="calendar-grid" id="calendar-days"></div>
                     </div>
-                    <div class="calendar-grid" id="calendar-days"></div>
                 </div>
 
                 <!-- VIEW: Diet -->
                 <div id="view-diet" class="view-section hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2>Dieta: <span id="diet-date-label">Dzisiaj</span></h2>
-                        <div class="flex gap-2">
-                            <input type="date" id="diet-date-picker" onchange="loadDietForDate(this.value)" class="mb-0">
+                    <div class="flex justify-between items-center mb-4" style="flex-wrap: wrap; gap:10px;">
+                        <h2>Dieta: <span id="diet-date-label" style="color:var(--primary)">Dzisiaj</span></h2>
+                        <div class="flex gap-2 items-center">
+                            <input type="date" id="diet-date-picker" onchange="loadDietForDate(this.value)" class="mb-0" style="width: auto;">
                             <button class="btn btn-primary" onclick="openModal('modal-meal')"><i data-lucide="plus"></i> Dodaj posiłek</button>
                         </div>
                     </div>
@@ -273,10 +346,10 @@
                         <h2>Baza Produktów</h2>
                         <button class="btn btn-primary" onclick="openModal('modal-product')"><i data-lucide="plus"></i> Nowy produkt</button>
                     </div>
-                    <input type="text" id="product-search" placeholder="Szukaj produktu..." onkeyup="renderProducts()">
+                    <input type="text" id="product-search" placeholder="Szukaj produktu... (np. Kurczak)" onkeyup="renderProducts()">
                     <div class="card overflow-x-auto">
                         <table class="data-table">
-                            <thead><tr><th>Nazwa</th><th>Kcal/100g</th><th>Białko</th><th>Węgle</th><th>Tłuszcze</th><th>Akcje</th></tr></thead>
+                            <thead><tr><th>Nazwa</th><th>Kcal (100g)</th><th>Białko</th><th>Węgle</th><th>Tłuszcze</th><th style="width: 80px;">Akcje</th></tr></thead>
                             <tbody id="products-table-body"></tbody>
                         </table>
                     </div>
@@ -284,15 +357,16 @@
 
                 <!-- VIEW: Water -->
                 <div id="view-water" class="view-section hidden">
-                    <h2>Nawodnienie: <span id="water-date-label">Dzisiaj</span></h2>
-                    <div class="card text-center mt-4" style="max-width: 400px; margin: 20px auto;">
-                        <i data-lucide="droplet" style="color: var(--primary); width: 48px; height: 48px;"></i>
-                        <h1 class="mt-2"><span id="water-current-text">0</span> / <span id="water-goal-text">2500</span> ml</h1>
-                        <div class="progress-bar mt-4 mb-4" style="height: 20px; border-radius: 10px;"><div id="water-progress-bar" class="progress-fill"></div></div>
-                        <div class="flex justify-center gap-2 mt-4">
-                            <button class="btn btn-outline" onclick="addWater(250)">+250 ml</button>
-                            <button class="btn btn-outline" onclick="addWater(500)">+500 ml</button>
-                            <button class="btn btn-outline" onclick="addWater(750)">+750 ml</button>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Nawodnienie: <span id="water-date-label" style="color:var(--primary)">Dzisiaj</span></h2>
+                    </div>
+                    <div class="card text-center" style="max-width: 500px; margin: 40px auto; padding: 40px 20px;">
+                        <i data-lucide="droplet" style="color: var(--primary); width: 64px; height: 64px; margin-bottom: 20px;"></i>
+                        <h1><span id="water-current-text" style="font-size: 3rem; color: var(--primary);">0</span> <span style="color:var(--text-secondary); font-size: 1.5rem;">/ <span id="water-goal-text">2500</span> ml</span></h1>
+                        <div class="progress-bar mt-4 mb-4" style="height: 24px; border-radius: 12px;"><div id="water-progress-bar" class="progress-fill" style="background: linear-gradient(90deg, #3b82f6, #0ea5e9);"></div></div>
+                        <div class="flex justify-center gap-4 mt-4" style="flex-wrap: wrap;">
+                            <button class="btn btn-outline" onclick="addWater(250)">+250 ml <i data-lucide="glass-water" style="width:16px;"></i></button>
+                            <button class="btn btn-outline" onclick="addWater(500)">+500 ml <i data-lucide="bottle-water" style="width:16px;"></i></button>
                         </div>
                     </div>
                 </div>
@@ -305,11 +379,11 @@
                     </div>
                     <div class="grid-2">
                         <div class="card">
-                            <h3>Najbliższe treningi</h3>
+                            <h3 style="color: var(--primary)"><i data-lucide="calendar-clock"></i> Najbliższe treningi</h3>
                             <div id="workouts-upcoming-list" class="mt-4"></div>
                         </div>
                         <div class="card">
-                            <h3>Historia treningów</h3>
+                            <h3><i data-lucide="history"></i> Historia treningów</h3>
                             <div id="workouts-history-list" class="mt-4"></div>
                         </div>
                     </div>
@@ -328,69 +402,77 @@
                 <!-- VIEW: Weight -->
                 <div id="view-weight" class="view-section hidden">
                     <div class="flex justify-between items-center mb-4">
-                        <h2>Waga</h2>
+                        <h2>Pomiary Wagi</h2>
                         <button class="btn btn-primary" onclick="openModal('modal-weight')"><i data-lucide="plus"></i> Dodaj pomiar</button>
                     </div>
-                    <div class="card"><canvas id="weightChart" style="max-height: 300px;"></canvas></div>
+                    <div class="card"><canvas id="weightChart" style="max-height: 350px;"></canvas></div>
                     <div class="card">
                         <h3>Historia pomiarów</h3>
-                        <table class="data-table mt-4">
-                            <thead><tr><th>Data</th><th>Waga</th><th>Notatka</th><th>Akcje</th></tr></thead>
-                            <tbody id="weight-history-body"></tbody>
-                        </table>
+                        <div class="overflow-x-auto">
+                            <table class="data-table mt-4">
+                                <thead><tr><th>Data</th><th>Waga (kg)</th><th>Notatka</th><th style="width: 80px;">Akcje</th></tr></thead>
+                                <tbody id="weight-history-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- VIEW: Stats -->
                 <div id="view-stats" class="view-section hidden">
-                    <h2>Statystyki</h2>
-                    <select id="stats-range" class="mb-4 mt-4" style="max-width: 200px;" onchange="loadStats()">
-                        <option value="7">Ostatnie 7 dni</option>
-                        <option value="30" selected>Ostatnie 30 dni</option>
-                        <option value="90">Ostatnie 90 dni</option>
-                    </select>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Statystyki</h2>
+                        <select id="stats-range" class="mb-0" style="max-width: 200px;" onchange="loadStats()">
+                            <option value="7">Ostatnie 7 dni</option>
+                            <option value="30" selected>Ostatnie 30 dni</option>
+                            <option value="90">Ostatnie 90 dni</option>
+                        </select>
+                    </div>
                     <div class="grid-2">
-                        <div class="card"><h3>Spożycie Kalorii</h3><canvas id="chart-calories"></canvas></div>
-                        <div class="card"><h3>Makroskładniki (Średnia)</h3><canvas id="chart-macros"></canvas></div>
+                        <div class="card"><h3>Spożycie Kalorii vs Cel</h3><canvas id="chart-calories"></canvas></div>
+                        <div class="card"><h3>Średni podział Makroskładników</h3><canvas id="chart-macros" style="max-height: 300px;"></canvas></div>
                     </div>
                 </div>
 
                 <!-- VIEW: Goals -->
                 <div id="view-goals" class="view-section hidden">
                     <h2>Cele Żywieniowe</h2>
-                    <div class="card mt-4" style="max-width: 600px;">
+                    <div class="card mt-4" style="max-width: 650px;">
+                        <p class="text-secondary mb-4">Ustal swoje dzienne cele dla kalorii, makroskładników oraz zapotrzebowania na wodę.</p>
                         <form onsubmit="saveGoals(event)">
                             <div class="grid-2">
                                 <div><label>Kalorie (kcal)</label><input type="number" id="goal-calories" required></div>
+                                <div><label>Woda (ml)</label><input type="number" id="goal-water" required></div>
+                                
                                 <div><label>Białko (g)</label><input type="number" id="goal-protein" required></div>
                                 <div><label>Węglowodany (g)</label><input type="number" id="goal-carbs" required></div>
+                                
                                 <div><label>Tłuszcze (g)</label><input type="number" id="goal-fat" required></div>
                                 <div><label>Błonnik (g)</label><input type="number" id="goal-fiber" required></div>
-                                <div><label>Woda (ml)</label><input type="number" id="goal-water" required></div>
                             </div>
-                            <button type="submit" class="btn btn-primary mt-4">Zapisz cele</button>
+                            <button type="submit" class="btn btn-primary w-100 mt-4"><i data-lucide="save"></i> Zapisz cele</button>
                         </form>
                     </div>
                 </div>
 
                 <!-- VIEW: Settings -->
                 <div id="view-settings" class="view-section hidden">
-                    <h2>Ustawienia</h2>
+                    <h2>Ustawienia Aplikacji</h2>
                     <div class="card mt-4" style="max-width: 600px;">
                         <div class="mb-4">
-                            <label>Motyw</label>
+                            <label>Wygląd (Motyw)</label>
                             <select id="theme-select" onchange="changeTheme(this.value)">
-                                <option value="light">Jasny</option>
-                                <option value="dark">Ciemny</option>
+                                <option value="light">Jasny (Light)</option>
+                                <option value="dark">Ciemny (Dark)</option>
                             </select>
                         </div>
-                        <hr style="border:0; border-top:1px solid var(--border); margin: 20px 0;">
+                        <hr style="border:0; border-top:1px solid var(--border); margin: 24px 0;">
                         <h3>Eksport danych</h3>
-                        <p class="text-sm text-secondary mb-2">Pobierz swoje dane w formacie CSV.</p>
+                        <p class="text-sm text-secondary mb-4">Pobierz swoje dane dietetyczne w formacie CSV.</p>
                         <button class="btn btn-outline" onclick="exportData()"><i data-lucide="download"></i> Eksportuj CSV</button>
-                        <hr style="border:0; border-top:1px solid var(--border); margin: 20px 0;">
-                        <h3>Konto</h3>
-                        <button class="btn btn-danger mt-2" onclick="deleteAccount()"><i data-lucide="trash-2"></i> Usuń konto</button>
+                        <hr style="border:0; border-top:1px solid var(--border); margin: 24px 0;">
+                        <h3 style="color: var(--danger);">Strefa niebezpieczna</h3>
+                        <p class="text-sm text-secondary mb-4">Usunięcie konta jest nieodwracalne i spowoduje skasowanie wszystkich logów.</p>
+                        <button class="btn btn-danger" onclick="deleteAccount()"><i data-lucide="trash-2"></i> Trwale usuń konto</button>
                     </div>
                 </div>
 
@@ -398,7 +480,10 @@
         </div>
     </div>
 
+    <!-- ============================================== -->
     <!-- MODALS -->
+    <!-- ============================================== -->
+
     <!-- Modal: Day Details -->
     <div id="modal-day" class="modal-overlay">
         <div class="modal-content">
@@ -408,7 +493,23 @@
             </div>
             <div class="modal-body" id="day-modal-body"></div>
             <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal('modal-day')">Zamknij</button>
                 <button class="btn btn-primary" onclick="goToDayDetails()">Przejdź do tego dnia</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Dodaj wodę z poziomu Dashboardu -->
+    <div id="modal-water" class="modal-overlay">
+        <div class="modal-content" style="max-width: 350px;">
+            <div class="modal-header">
+                <h3>Szybkie dodanie wody</h3>
+                <button onclick="closeModal('modal-water')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body text-center flex-col gap-4">
+                <button class="btn btn-outline w-100" onclick="addWater(250); closeModal('modal-water')">+250 ml (Szklanka)</button>
+                <button class="btn btn-outline w-100" onclick="addWater(500); closeModal('modal-water')">+500 ml (Mała butelka)</button>
+                <button class="btn btn-outline w-100" onclick="addWater(1000); closeModal('modal-water')">+1000 ml (Duża butelka)</button>
             </div>
         </div>
     </div>
@@ -417,21 +518,15 @@
     <div id="modal-meal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3>Dodaj posiłek</h3>
+                <h3><i data-lucide="utensils" style="margin-right:8px; color:var(--primary)"></i> Dodaj posiłek</h3>
                 <button onclick="closeModal('modal-meal')"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <form id="form-meal" onsubmit="saveMeal(event)">
                     <input type="hidden" id="meal-id">
                     <div class="grid-2">
-                        <div>
-                            <label>Data</label>
-                            <input type="date" id="meal-date" required>
-                        </div>
-                        <div>
-                            <label>Godzina</label>
-                            <input type="time" id="meal-time" required>
-                        </div>
+                        <div><label>Data</label><input type="date" id="meal-date" required></div>
+                        <div><label>Godzina</label><input type="time" id="meal-time" required></div>
                     </div>
                     <label>Typ posiłku</label>
                     <select id="meal-type">
@@ -439,24 +534,31 @@
                         <option value="Obiad">Obiad</option><option value="Podwieczorek">Podwieczorek</option>
                         <option value="Kolacja">Kolacja</option><option value="Przekąska">Przekąska</option><option value="Inne">Inne</option>
                     </select>
-                    <label>Wybierz produkt z bazy</label>
-                    <select id="meal-product-select" onchange="autoFillMealMacros()">
-                        <option value="">-- Wpisz ręcznie poniżej --</option>
-                    </select>
+                    
+                    <div class="card" style="padding: 16px; margin: 16px 0; background: var(--bg-surface-hover); border-style: dashed;">
+                        <label style="color: var(--primary);">Szybkie dodawanie z Bazy Produktów</label>
+                        <select id="meal-product-select" onchange="autoFillMealMacros()" style="margin-bottom: 8px;">
+                            <option value="">-- Wybierz lub wpisz ręcznie poniżej --</option>
+                        </select>
+                        <label>Ilość (g) do automatycznego przeliczenia makro</label>
+                        <input type="number" id="meal-grams" onkeyup="recalcMealMacros()" placeholder="np. 150" class="mb-0">
+                    </div>
+                    
                     <label>Nazwa posiłku</label>
-                    <input type="text" id="meal-name" required>
-                    <label>Ilość w gramach (opcjonalnie do przeliczenia)</label>
-                    <input type="number" id="meal-grams" onkeyup="recalcMealMacros()">
-                    <div class="grid-2 mt-2">
+                    <input type="text" id="meal-name" required placeholder="np. Owsianka z malinami">
+                    
+                    <div class="grid-4 mt-2">
                         <div><label>Kcal</label><input type="number" id="meal-kcal" step="0.1" required></div>
                         <div><label>Białko (g)</label><input type="number" id="meal-protein" step="0.1" required></div>
                         <div><label>Węgle (g)</label><input type="number" id="meal-carbs" step="0.1" required></div>
-                        <div><label>Tłuszcze (g)</label><input type="number" id="meal-fat" step="0.1" required></div>
+                        <div><label>Tłuszcz (g)</label><input type="number" id="meal-fat" step="0.1" required></div>
                     </div>
-                    <label>Błonnik (g)</label><input type="number" id="meal-fiber" step="0.1" value="0">
+                    <label>Błonnik (g) - Opcjonalnie</label>
+                    <input type="number" id="meal-fiber" step="0.1" value="0">
                     <label>Notatka</label>
-                    <textarea id="meal-notes" rows="2"></textarea>
-                    <button type="submit" class="btn btn-primary mt-2 w-100" style="width: 100%;">Zapisz posiłek</button>
+                    <textarea id="meal-notes" rows="2" placeholder="Opcjonalny opis..."></textarea>
+                    
+                    <button type="submit" class="btn btn-primary w-100 mt-4"><i data-lucide="check"></i> Zapisz posiłek</button>
                 </form>
             </div>
         </div>
@@ -466,21 +568,21 @@
     <div id="modal-product" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Produkt (wartości na 100g)</h3>
+                <h3>Nowy Produkt (wartości na 100g)</h3>
                 <button onclick="closeModal('modal-product')"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <form id="form-product" onsubmit="saveProduct(event)">
                     <input type="hidden" id="product-id">
-                    <label>Nazwa</label><input type="text" id="prod-name" required>
+                    <label>Nazwa Produktu</label><input type="text" id="prod-name" required placeholder="np. Pierś z kurczaka surowa">
                     <div class="grid-2">
-                        <div><label>Kcal</label><input type="number" id="prod-kcal" step="0.1" required></div>
+                        <div><label>Kcal / 100g</label><input type="number" id="prod-kcal" step="0.1" required></div>
                         <div><label>Białko (g)</label><input type="number" id="prod-protein" step="0.1" required></div>
                         <div><label>Węgle (g)</label><input type="number" id="prod-carbs" step="0.1" required></div>
                         <div><label>Tłuszcze (g)</label><input type="number" id="prod-fat" step="0.1" required></div>
                     </div>
-                    <label>Błonnik (g)</label><input type="number" id="prod-fiber" step="0.1" value="0">
-                    <button type="submit" class="btn btn-primary mt-2 w-100" style="width: 100%;">Zapisz</button>
+                    <label>Błonnik (g) - Opcjonalnie</label><input type="number" id="prod-fiber" step="0.1" value="0">
+                    <button type="submit" class="btn btn-primary w-100 mt-4"><i data-lucide="save"></i> Dodaj do bazy</button>
                 </form>
             </div>
         </div>
@@ -495,10 +597,10 @@
             </div>
             <div class="modal-body">
                 <form onsubmit="saveWeight(event)">
-                    <label>Data</label><input type="date" id="weight-date" required>
-                    <label>Waga (kg)</label><input type="number" step="0.1" id="weight-val" required>
-                    <label>Notatka</label><textarea id="weight-notes" rows="2"></textarea>
-                    <button type="submit" class="btn btn-primary mt-2 w-100" style="width: 100%;">Zapisz</button>
+                    <label>Data Pomiaru</label><input type="date" id="weight-date" required>
+                    <label>Waga (kg)</label><input type="number" step="0.1" id="weight-val" required placeholder="np. 75.5">
+                    <label>Notatka</label><textarea id="weight-notes" rows="2" placeholder="np. po przebudzeniu na czczo"></textarea>
+                    <button type="submit" class="btn btn-primary w-100 mt-4">Zapisz Pomiar</button>
                 </form>
             </div>
         </div>
@@ -514,26 +616,26 @@
             <div class="modal-body">
                 <form onsubmit="saveWorkout(event)">
                     <input type="hidden" id="workout-id">
-                    <label>Nazwa</label><input type="text" id="wo-name" required placeholder="np. Push, FBW">
+                    <label>Nazwa Treningu</label><input type="text" id="wo-name" required placeholder="np. Góra Ciała (Push)">
                     <div class="grid-2">
                         <div><label>Data</label><input type="date" id="wo-date" required></div>
                         <div><label>Godzina</label><input type="time" id="wo-time"></div>
                     </div>
                     <div class="grid-2">
-                        <div><label>Typ</label>
+                        <div><label>Typ aktywności</label>
                             <select id="wo-type">
-                                <option>Siłowy</option><option>Cardio</option><option>Bieganie</option><option>Inny</option>
+                                <option>Siłowy</option><option>Cardio</option><option>Bieganie</option><option>Stretching</option><option>Inny</option>
                             </select>
                         </div>
-                        <div><label>Czas (min)</label><input type="number" id="wo-duration"></div>
+                        <div><label>Przewidywany czas (min)</label><input type="number" id="wo-duration" placeholder="np. 60"></div>
                     </div>
                     <label>Status</label>
                     <select id="wo-status">
-                        <option value="planned">Zaplanowany</option>
-                        <option value="completed">Wykonany</option>
-                        <option value="skipped">Pominięty</option>
+                        <option value="planned">Zaplanowany (Do zrobienia)</option>
+                        <option value="completed">Wykonany (Zrobione!)</option>
+                        <option value="skipped">Pominięty (Odpoczynek)</option>
                     </select>
-                    <button type="submit" class="btn btn-primary mt-4 w-100" style="width: 100%;">Zapisz Trening</button>
+                    <button type="submit" class="btn btn-primary w-100 mt-4"><i data-lucide="calendar-plus"></i> Zapisz Trening</button>
                 </form>
             </div>
         </div>
@@ -543,25 +645,28 @@
     <div id="modal-execute-workout" class="modal-overlay">
         <div class="modal-content" style="max-width: 800px; max-height: 95vh;">
             <div class="modal-header">
-                <h3 id="exec-wo-title">Trening</h3>
+                <h3 id="exec-wo-title">Rejestrator Treningu</h3>
                 <button onclick="closeModal('modal-execute-workout')"><i data-lucide="x"></i></button>
             </div>
-            <div class="modal-body">
-                <div class="flex justify-between items-center mb-4">
-                    <select id="exec-add-exercise-select" style="max-width: 250px; margin-bottom: 0;">
-                        <option value="">Wybierz ćwiczenie do dodania</option>
+            <div class="modal-body" style="background: var(--bg-base);">
+                <div class="card p-4 mb-4 flex justify-between items-center" style="gap: 10px; flex-wrap: wrap;">
+                    <select id="exec-add-exercise-select" style="max-width: 300px; margin-bottom: 0;">
+                        <option value="">Wybierz ćwiczenie z bazy...</option>
                     </select>
-                    <button class="btn btn-outline" onclick="addExerciseToWorkout()"><i data-lucide="plus"></i> Dodaj ćwiczenie</button>
+                    <button class="btn btn-primary" onclick="addExerciseToWorkout()"><i data-lucide="plus"></i> Dodaj ćwiczenie</button>
                 </div>
                 <div id="exec-wo-exercises" class="flex-col gap-4"></div>
-                <div class="mt-4 p-4 card text-center" id="rest-timer-container" style="display:none; border-color: var(--primary);">
-                    <h4>Czas przerwy</h4>
-                    <h2 id="rest-timer-display" style="color: var(--primary); font-size: 2rem;">00:00</h2>
-                    <button class="btn btn-outline mt-2" onclick="stopTimer()">Zatrzymaj</button>
+                
+                <!-- Stoper przerw -->
+                <div class="mt-4 p-4 card text-center" id="rest-timer-container" style="display:none; border: 2px solid var(--primary); box-shadow: 0 0 15px rgba(79,70,229,0.2);">
+                    <h4 class="text-secondary text-sm uppercase">Czas odpoczynku</h4>
+                    <h2 id="rest-timer-display" style="color: var(--primary); font-size: 3rem; margin: 10px 0;">00:00</h2>
+                    <button class="btn btn-outline mt-2" onclick="stopTimer()">Zakończ przerwę</button>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="completeWorkout()">Zakończ trening</button>
+                <button class="btn btn-outline" onclick="closeModal('modal-execute-workout')">Zamknij</button>
+                <button class="btn btn-success" style="background: var(--success); color: white;" onclick="completeWorkout()"><i data-lucide="check-circle"></i> Oznacz jako Zakończony</button>
             </div>
         </div>
     </div>
@@ -576,15 +681,16 @@
             <div class="modal-body">
                 <form onsubmit="saveExercise(event)">
                     <input type="hidden" id="ex-id">
-                    <label>Nazwa</label><input type="text" id="ex-name" required>
-                    <label>Grupa mięśniowa</label>
+                    <label>Nazwa Ćwiczenia</label><input type="text" id="ex-name" required placeholder="np. Wyciskanie sztangi leżąc">
+                    <label>Główna Grupa Mięśniowa</label>
                     <select id="ex-muscle">
                         <option>Klatka piersiowa</option><option>Plecy</option><option>Barki</option>
                         <option>Biceps</option><option>Triceps</option><option>Nogi</option>
                         <option>Brzuch</option><option>Całe ciało</option><option>Cardio</option>
                     </select>
-                    <label>Opis</label><textarea id="ex-desc" rows="2"></textarea>
-                    <button type="submit" class="btn btn-primary mt-2 w-100" style="width: 100%;">Zapisz</button>
+                    <label>Opis / Wskazówki techniczne (opcjonalnie)</label>
+                    <textarea id="ex-desc" rows="3" placeholder="Pamiętaj o retrakcji łopatek..."></textarea>
+                    <button type="submit" class="btn btn-primary w-100 mt-4"><i data-lucide="save"></i> Zapisz Ćwiczenie</button>
                 </form>
             </div>
         </div>
@@ -593,13 +699,13 @@
     <!-- Toasts -->
     <div id="toast-container"></div>
 
+    <!-- ============================================== -->
+    <!-- LOGIKA APLIKACJI (JAVASCRIPT) -->
+    <!-- ============================================== -->
     <script>
         const SUPABASE_URL = "https://ttgeuikoyfcgiboajhcf.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4";
 
-        // --- Inicjalizacja Supabase ---
-        // ZMIANA Z 'let supabase' na 'let supabaseClient' 
-        // Aby uniknąć konfliktu zmiennych tworzonych przez <script> w sekcji head.
         let supabaseClient = null;
         try {
             if (window.supabase) {
@@ -609,12 +715,11 @@
             console.error("Błąd konfiguracji Supabase:", e);
         }
 
-        // --- Stan Aplikacji ---
         const state = {
             user: null,
             date: new Date(),
             calendarDate: new Date(),
-            goals: { calories: 2000, protein: 150, carbs: 200, fat: 70, fiber: 25, water: 2500 },
+            goals: { calories: 2500, protein: 160, carbs: 250, fat: 80, fiber: 30, water: 3000 },
             meals: [], products: [], water: 0, weight: [], workouts: [], exercises: [],
             charts: {}
         };
@@ -622,15 +727,11 @@
         let currentActiveWorkoutId = null;
         let restTimerInterval = null;
 
-        // --- Narzędzia ---
         const $ = id => document.getElementById(id);
-        const show = id => { if($(id)) $(id).classList.remove('hidden'); };
-        const hide = id => { if($(id)) $(id).classList.add('hidden'); };
         const val = id => $(id) ? $(id).value : null;
         const setVal = (id, v) => { if($(id)) $(id).value = v; };
         const html = (id, h) => { if($(id)) $(id).innerHTML = h; };
         
-        // Zabezpieczenie przed błędami strefy czasowej
         const formatDate = d => {
             const offset = d.getTimezoneOffset() * 60000;
             return new Date(d.getTime() - offset).toISOString().split('T')[0];
@@ -639,23 +740,44 @@
         function showToast(msg, type = 'success') {
             const t = document.createElement('div');
             t.className = `toast ${type}`;
-            t.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i> ${msg}`;
+            const iconName = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
+            t.innerHTML = `<i data-lucide="${iconName}"></i> <span>${msg}</span>`;
             $('toast-container').appendChild(t);
-            if (window.lucide) lucide.createIcons();
-            setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3000);
+            if (window.lucide) lucide.createIcons({root: t});
+            setTimeout(() => { 
+                t.style.opacity = '0'; 
+                t.style.transform = 'translateX(100%)'; 
+                setTimeout(()=>t.remove(), 400); 
+            }, 3500);
+        }
+
+        // --- Modale (NAPRAWIONE) ---
+        function openModal(id) { 
+            const el = $(id);
+            if(el) el.classList.add('active'); 
+        }
+        function closeModal(id) { 
+            const el = $(id);
+            if(el) el.classList.remove('active'); 
+            
+            // Resetowanie formularzy po zamknięciu
+            if(id === 'modal-meal') $('form-meal').reset(); 
+            if(id === 'modal-product') $('form-product').reset();
+            if(id === 'modal-weight') $('weight-val').value = '';
+            if(id === 'modal-execute-workout') stopTimer();
         }
 
         // --- Autoryzacja ---
         let isLoginMode = true;
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
-            $('auth-btn').textContent = isLoginMode ? "Zaloguj się" : "Utwórz konto";
-            $('auth-toggle').textContent = isLoginMode ? "Nie masz konta? Utwórz je." : "Masz już konto? Zaloguj się.";
+            $('auth-btn').innerHTML = isLoginMode ? "Zaloguj się" : "Utwórz darmowe konto";
+            $('auth-toggle').innerHTML = isLoginMode ? "Nie masz konta? Utwórz je." : "Masz już konto? Zaloguj się.";
         }
 
         async function handleAuth(e) {
             e.preventDefault();
-            if (!supabaseClient) return alert("Brak połączenia z Supabase. Sprawdź blokery reklam (AdBlock) lub dostęp do internetu!");
+            if (!supabaseClient) return alert("Brak połączenia z bazą. Sprawdź adblocka.");
             const email = val('auth-email'), password = val('auth-password');
             $('global-loader').style.display = 'flex';
             
@@ -663,13 +785,11 @@
             if (isLoginMode) {
                 const res = await supabaseClient.auth.signInWithPassword({ email, password });
                 error = res.error;
-                if (res.data && res.data.session) {
-                    state.user = res.data.session.user;
-                }
+                if (res.data && res.data.session) state.user = res.data.session.user;
             } else {
                 const res = await supabaseClient.auth.signUp({ email, password });
                 error = res.error;
-                if (!error) showToast("Konto utworzone! Zaloguj się.");
+                if (!error) showToast("Konto utworzone! Teraz możesz się zalogować.");
             }
             
             $('global-loader').style.display = 'none';
@@ -682,39 +802,34 @@
             location.reload();
         }
 
-        // --- Nawigacja i Inicjalizacja ---
         async function checkSession() {
             if (!supabaseClient) {
-                hide('global-loader');
-                showToast("Błąd ładownia bazy danych. Sprawdź połączenie z internetem.", "error");
+                $('global-loader').style.display = 'none';
+                $('auth-screen').classList.remove('hidden');
                 return;
             }
-            
             try {
-                const { data, error } = await supabaseClient.auth.getSession();
+                const { data } = await supabaseClient.auth.getSession();
                 if (data && data.session) {
                     state.user = data.session.user;
                     initApp();
                 } else {
-                    hide('global-loader');
-                    show('auth-screen');
+                    $('global-loader').style.display = 'none';
+                    $('auth-screen').classList.remove('hidden');
                 }
             } catch(err) {
-                console.error("Błąd sieci przy sprawdzaniu sesji:", err);
-                hide('global-loader');
-                show('auth-screen');
+                $('global-loader').style.display = 'none';
+                $('auth-screen').classList.remove('hidden');
             }
         }
 
         async function initApp() {
-            hide('auth-screen');
-            show('app');
+            $('auth-screen').classList.add('hidden');
+            $('app').style.display = 'flex';
             $('global-loader').style.display = 'flex';
             
             if (state.user && state.user.email) {
                 html('user-display-name', state.user.email.split('@')[0]);
-            } else {
-                html('user-display-name', 'Użytkownik');
             }
             
             const savedTheme = localStorage.getItem('theme') || 'light';
@@ -722,28 +837,22 @@
             setVal('theme-select', savedTheme);
 
             try {
-                await Promise.all([
-                    loadGoals(),
-                    loadProducts(),
-                    loadExercises()
-                ]);
-            } catch (err) {
-                console.error("Błąd ładowania danych początkowych:", err);
-            }
+                await Promise.all([ loadGoals(), loadProducts(), loadExercises() ]);
+            } catch (err) { console.error("Błąd wczytywania startowego:", err); }
             
             $('global-loader').style.display = 'none';
             navigate('dashboard');
             if (window.lucide) lucide.createIcons();
         }
 
-        function toggleSidebar() {
-            $('sidebar').classList.toggle('open');
-        }
+        function toggleSidebar() { $('sidebar').classList.toggle('open'); }
 
         function navigate(view) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            show(`view-${view}`);
+            const targetEl = document.getElementById(`view-${view}`);
+            if(targetEl) targetEl.classList.remove('hidden');
+            
             const navItem = document.querySelector(`[data-target="${view}"]`);
             if (navItem) navItem.classList.add('active');
             
@@ -751,6 +860,7 @@
             
             updateDateDisplay();
             
+            // Logika odświeżania widoków
             if(view === 'dashboard') loadDashboard();
             if(view === 'calendar') renderCalendar();
             if(view === 'diet') { setVal('diet-date-picker', formatDate(state.date)); loadDietForDate(formatDate(state.date)); }
@@ -768,23 +878,12 @@
             html('current-date-display', state.date.toLocaleDateString('pl-PL', options));
         }
 
-        // --- Modale ---
-        function openModal(id) { show(id); }
-        function closeModal(id) { 
-            hide(id); 
-            if(id === 'modal-meal') $('form-meal').reset(); 
-            if(id === 'modal-product') $('form-product').reset();
-            if(id === 'modal-execute-workout') stopTimer();
-        }
-
         // --- API & Logika ---
         
         async function loadGoals() {
             const { data } = await supabaseClient.from('nutrition_goals').select('*').eq('user_id', state.user.id).single();
             if (data) state.goals = data;
-            else {
-                await supabaseClient.from('nutrition_goals').insert([{ user_id: state.user.id, ...state.goals }]);
-            }
+            else await supabaseClient.from('nutrition_goals').insert([{ user_id: state.user.id, ...state.goals }]);
         }
 
         function renderGoalsForm() {
@@ -803,24 +902,33 @@
             const { error } = await supabaseClient.from('nutrition_goals').update(payload).eq('user_id', state.user.id);
             if (!error) {
                 state.goals = { ...state.goals, ...payload };
-                showToast("Cele zaktualizowane");
-            } else showToast("Błąd zapisu", "error");
+                showToast("Cele zostały pomyślnie zapisane!");
+                loadDashboard(); // Odśwież paski na dashboardzie
+            } else showToast("Wystąpił błąd podczas zapisu.", "error");
         }
 
         // Dashboard
         async function loadDashboard() {
             const todayStr = formatDate(state.date);
             
+            // Posiłki
             const { data: meals } = await supabaseClient.from('meals').select('*').eq('meal_date', todayStr).eq('user_id', state.user.id);
             let kc = 0, p = 0, c = 0, f = 0;
             let mealsHtml = '';
             (meals || []).forEach(m => {
                 kc += m.calories; p += m.protein; c += m.carbs; f += m.fat;
-                mealsHtml += `<div class="list-item"><span>${m.name}</span><strong>${Math.round(m.calories)} kcal</strong></div>`;
+                mealsHtml += `<div class="list-item" style="padding: 10px 14px;">
+                    <div class="flex-col">
+                        <span style="font-weight:600">${m.name}</span>
+                        <span class="text-sm text-secondary">${m.meal_type}</span>
+                    </div>
+                    <strong style="color:var(--primary)">${Math.round(m.calories)} kcal</strong>
+                </div>`;
             });
-            if(!mealsHtml) mealsHtml = '<div class="text-secondary text-sm">Brak posiłków.</div>';
+            if(!mealsHtml) mealsHtml = '<div class="text-secondary text-sm text-center p-4">Nie dodałeś jeszcze żadnych posiłków na dziś.</div>';
             html('dash-meals-list', mealsHtml);
 
+            // Aktualizacja pasków postępu
             const updateProg = (id, current, goal, elBar) => {
                 html(`${id}-current`, Math.round(current)); html(`${id}-goal`, goal);
                 let pct = Math.min((current/goal)*100, 100) || 0;
@@ -833,32 +941,40 @@
             updateProg('dash-carbs', c, state.goals.carbs, 'dash-carbs-bar');
             updateProg('dash-fat', f, state.goals.fat, 'dash-fat-bar');
 
+            // Treningi
             const { data: workouts } = await supabaseClient.from('workouts').select('*').eq('workout_date', todayStr).eq('user_id', state.user.id);
             if(workouts && workouts.length > 0) {
                 let w = workouts[0];
                 let statCol = w.status === 'completed' ? 'var(--success)' : 'var(--warning)';
+                let statText = w.status === 'completed' ? 'Zakończony' : (w.status==='skipped' ? 'Pominięty' : 'Zaplanowany');
                 html('dash-workout-container', `
-                    <div style="border-left: 4px solid ${statCol}; padding-left: 10px;">
-                        <strong>${w.name}</strong> (${w.workout_type})<br>
-                        <span class="text-sm text-secondary">Status: ${w.status === 'completed' ? 'Wykonany' : 'Zaplanowany'}</span>
+                    <div class="card" style="border-left: 5px solid ${statCol}; margin-bottom: 0;">
+                        <h4 style="font-size: 1.1rem">${w.name}</h4>
+                        <div class="text-sm text-secondary mt-2">Typ: ${w.workout_type} | Status: <strong style="color:${statCol}">${statText}</strong></div>
+                        <button class="btn btn-outline w-100 mt-4" onclick="openExecuteWorkout('${w.id}')">Przejdź do treningu</button>
                     </div>
-                    <button class="btn btn-primary mt-2" onclick="openExecuteWorkout('${w.id}')">Przejdź do treningu</button>
                 `);
             } else {
-                html('dash-workout-container', `<p class="text-secondary text-sm mb-2">Brak zaplanowanego treningu na dziś.</p><button class="btn btn-outline" onclick="openModal('modal-workout'); setVal('wo-date', '${todayStr}');">Zaplanuj teraz</button>`);
+                html('dash-workout-container', `
+                    <div class="text-center p-4">
+                        <div class="text-secondary mb-4">Masz dziś wolne od treningu?</div>
+                        <button class="btn btn-primary" onclick="openModal('modal-workout'); setVal('wo-date', '${todayStr}');"><i data-lucide="plus"></i> Zaplanuj nowy</button>
+                    </div>
+                `);
             }
+            if(window.lucide) lucide.createIcons();
         }
 
-        // Products
+        // Baza Produktów
         async function loadProducts() {
-            const { data } = await supabaseClient.from('products').select('*').eq('user_id', state.user.id);
+            const { data } = await supabaseClient.from('products').select('*').eq('user_id', state.user.id).order('name');
             state.products = data || [];
             updateProductSelects();
         }
         function updateProductSelects() {
             const sel = $('meal-product-select');
             if(sel) {
-                sel.innerHTML = '<option value="">-- Wpisz ręcznie poniżej --</option>' + 
+                sel.innerHTML = '<option value="">-- Wybierz lub wpisz ręcznie poniżej --</option>' + 
                     state.products.map(p => `<option value="${p.id}">${p.name} (${p.calories} kcal/100g)</option>`).join('');
             }
         }
@@ -867,8 +983,10 @@
             const filtered = state.products.filter(p => p.name.toLowerCase().includes(q));
             html('products-table-body', filtered.map(p => `
                 <tr>
-                    <td>${p.name}</td><td>${p.calories}</td><td>${p.protein}</td><td>${p.carbs}</td><td>${p.fat}</td>
-                    <td><button onclick="deleteProduct('${p.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i></button></td>
+                    <td style="font-weight: 500">${p.name}</td>
+                    <td><strong style="color:var(--primary)">${p.calories}</strong></td>
+                    <td>${p.protein}g</td><td>${p.carbs}g</td><td>${p.fat}g</td>
+                    <td><button onclick="deleteProduct('${p.id}')" style="color:var(--danger); padding:6px; border-radius:50%;" class="btn-outline"><i data-lucide="trash-2" style="width:18px"></i></button></td>
                 </tr>
             `).join(''));
             if(window.lucide) lucide.createIcons();
@@ -881,16 +999,21 @@
                 carbs: parseFloat(val('prod-carbs')), fat: parseFloat(val('prod-fat')), fiber: parseFloat(val('prod-fiber'))
             };
             const { data, error } = await supabaseClient.from('products').insert([p]).select();
-            if(!error) { state.products.push(data[0]); renderProducts(); updateProductSelects(); closeModal('modal-product'); showToast('Produkt dodany'); }
+            if(!error) { 
+                state.products.push(data[0]); 
+                renderProducts(); updateProductSelects(); 
+                closeModal('modal-product'); 
+                showToast('Produkt zapisany w bazie!'); 
+            }
         }
         async function deleteProduct(id) {
-            if(!confirm("Usunąć produkt?")) return;
+            if(!confirm("Czy na pewno usunąć ten produkt z bazy?")) return;
             await supabaseClient.from('products').delete().eq('id', id);
             state.products = state.products.filter(p => p.id !== id);
-            renderProducts(); updateProductSelects(); showToast("Usunięto");
+            renderProducts(); updateProductSelects(); showToast("Usunięto pomyślnie.");
         }
 
-        // Diet & Meals
+        // Dieta & Posiłki
         function autoFillMealMacros() {
             const pid = val('meal-product-select');
             if(!pid) return;
@@ -924,7 +1047,12 @@
                 notes: val('meal-notes')
             };
             const { error } = await supabaseClient.from('meals').insert([m]);
-            if(!error) { closeModal('modal-meal'); showToast("Posiłek zapisany"); if($('view-diet').classList.contains('hidden')===false) loadDietForDate(val('meal-date')); if($('view-dashboard').classList.contains('hidden')===false) loadDashboard(); }
+            if(!error) { 
+                closeModal('modal-meal'); 
+                showToast("Posiłek dodany z sukcesem!"); 
+                if(!$('view-diet').classList.contains('hidden')) loadDietForDate(val('meal-date')); 
+                if(!$('view-dashboard').classList.contains('hidden')) loadDashboard(); 
+            }
         }
         async function loadDietForDate(dateStr) {
             setVal('diet-date-picker', dateStr);
@@ -937,39 +1065,39 @@
             (data||[]).forEach(m => {
                 kc+=m.calories; p+=m.protein; c+=m.carbs; f+=m.fat;
                 list += `
-                    <div class="list-item flex-col items-start gap-2" style="align-items: stretch;">
-                        <div class="flex justify-between w-100">
-                            <strong>${m.name}</strong>
-                            <span>${Math.round(m.calories)} kcal</span>
+                    <div class="card p-4" style="margin-bottom: 12px; display:flex; flex-direction:column; gap:10px;">
+                        <div class="flex justify-between items-center w-100">
+                            <h4 style="font-size:1.1rem; margin:0">${m.name}</h4>
+                            <strong style="color:var(--primary); font-size:1.1rem;">${Math.round(m.calories)} kcal</strong>
                         </div>
-                        <div class="text-sm text-secondary flex justify-between w-100">
-                            <span>${m.meal_type} ${m.meal_time ? m.meal_time.substring(0,5) : ''}</span>
+                        <div class="text-sm text-secondary flex justify-between w-100 items-center">
+                            <span style="background:var(--bg-surface-hover); padding:4px 8px; border-radius:4px;"><i data-lucide="clock" style="width:14px; height:14px; vertical-align:middle; margin-right:4px;"></i> ${m.meal_type} ${m.meal_time ? m.meal_time.substring(0,5) : ''}</span>
                             <span>B: ${m.protein}g | W: ${m.carbs}g | T: ${m.fat}g</span>
                         </div>
-                        <div class="flex gap-2 justify-end">
-                            <button onclick="deleteMeal('${m.id}', '${dateStr}')" class="text-sm" style="color:var(--danger)"><i data-lucide="trash-2" style="width:16px;height:16px"></i> Usuń</button>
+                        <div class="flex justify-end mt-2 pt-2" style="border-top:1px dashed var(--border)">
+                            <button onclick="deleteMeal('${m.id}', '${dateStr}')" class="btn btn-outline btn-sm text-danger" style="color:var(--danger); border-color:transparent;"><i data-lucide="trash-2" style="width:16px;"></i> Usuń</button>
                         </div>
                     </div>`;
             });
-            if(!list) list = '<p class="text-secondary p-4">Brak posiłków w tym dniu.</p>';
+            if(!list) list = '<div class="text-center p-4 text-secondary">Brak zapisanych posiłków w tym dniu.</div>';
             html('diet-meals-container', list);
 
             const pct = (v, max) => Math.min((v/max)*100, 100);
             html('diet-macros-summary', `
-                <div class="card text-center"><div class="text-secondary text-sm">Kalorie</div><div class="text-lg">${Math.round(kc)} / ${state.goals.calories}</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(kc, state.goals.calories)}%"></div></div></div>
-                <div class="card text-center"><div class="text-secondary text-sm">Białko</div><div class="text-lg">${Math.round(p)} / ${state.goals.protein}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(p, state.goals.protein)}%"></div></div></div>
-                <div class="card text-center"><div class="text-secondary text-sm">Węgle</div><div class="text-lg">${Math.round(c)} / ${state.goals.carbs}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(c, state.goals.carbs)}%"></div></div></div>
-                <div class="card text-center"><div class="text-secondary text-sm">Tłuszcze</div><div class="text-lg">${Math.round(f)} / ${state.goals.fat}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(f, state.goals.fat)}%"></div></div></div>
+                <div class="card stat-card"><div class="text-secondary text-sm font-semibold uppercase">Kalorie</div><div class="text-lg">${Math.round(kc)} / ${state.goals.calories}</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(kc, state.goals.calories)}%"></div></div></div>
+                <div class="card stat-card"><div class="text-secondary text-sm font-semibold uppercase">Białko</div><div class="text-lg">${Math.round(p)} / ${state.goals.protein}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(p, state.goals.protein)}%"></div></div></div>
+                <div class="card stat-card"><div class="text-secondary text-sm font-semibold uppercase">Węgle</div><div class="text-lg">${Math.round(c)} / ${state.goals.carbs}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(c, state.goals.carbs)}%"></div></div></div>
+                <div class="card stat-card"><div class="text-secondary text-sm font-semibold uppercase">Tłuszcze</div><div class="text-lg">${Math.round(f)} / ${state.goals.fat}g</div><div class="progress-bar"><div class="progress-fill" style="width:${pct(f, state.goals.fat)}%"></div></div></div>
             `);
             if(window.lucide) lucide.createIcons();
         }
         async function deleteMeal(id, dateStr) {
-            if(!confirm("Usunąć?")) return;
+            if(!confirm("Usunąć ten posiłek?")) return;
             await supabaseClient.from('meals').delete().eq('id', id);
-            loadDietForDate(dateStr); showToast("Usunięto");
+            loadDietForDate(dateStr); showToast("Posiłek usunięty.");
         }
 
-        // Water
+        // Woda
         async function loadWaterForDate(dateStr) {
             html('water-date-label', dateStr === formatDate(new Date()) ? 'Dzisiaj' : dateStr);
             const { data } = await supabaseClient.from('water_logs').select('*').eq('log_date', dateStr).eq('user_id', state.user.id);
@@ -983,15 +1111,18 @@
             let pct = Math.min((current/state.goals.water)*100, 100);
             let bar = $('water-progress-bar');
             bar.style.width = pct + '%';
-            bar.className = 'progress-fill ' + (pct >= 100 ? 'success' : '');
         }
         async function addWater(amount) {
             const todayStr = formatDate(state.date);
             const { error } = await supabaseClient.from('water_logs').insert([{ user_id: state.user.id, log_date: todayStr, amount_ml: amount }]);
-            if(!error) { updateWaterUI(state.water + amount); showToast(`Dodano ${amount}ml`); }
+            if(!error) { 
+                updateWaterUI(state.water + amount); 
+                showToast(`Wypito +${amount} ml wody! 💧`); 
+                if(!$('view-dashboard').classList.contains('hidden')) loadDashboard(); 
+            }
         }
 
-        // Workouts
+        // Treningi
         async function loadWorkoutsView() {
             setVal('wo-date', formatDate(state.date));
             const { data } = await supabaseClient.from('workouts').select('*').eq('user_id', state.user.id).order('workout_date', { ascending: false });
@@ -1000,13 +1131,17 @@
             const upcoming = (data||[]).filter(w => w.workout_date >= today && w.status !== 'completed');
             const history = (data||[]).filter(w => w.workout_date < today || w.status === 'completed').slice(0, 10);
             
-            const renderWList = (list) => list.length === 0 ? '<p class="text-secondary">Brak danych.</p>' : list.map(w => `
+            const renderWList = (list) => list.length === 0 ? '<p class="text-secondary p-2">Brak treningów w tej kategorii.</p>' : list.map(w => `
                 <div class="list-item cursor-pointer" onclick="openExecuteWorkout('${w.id}')">
-                    <div>
-                        <strong>${w.name}</strong> (${w.workout_type})
-                        <div class="text-sm text-secondary">${w.workout_date} ${w.start_time ? w.start_time.substring(0,5) : ''} | Status: ${w.status}</div>
+                    <div class="flex-col gap-2">
+                        <strong style="font-size:1.1rem">${w.name}</strong>
+                        <div class="text-sm text-secondary flex items-center gap-2">
+                            <span style="background:var(--bg-surface-hover); padding:2px 6px; border-radius:4px;">${w.workout_date}</span>
+                            <span>${w.workout_type}</span>
+                            <span>Status: ${w.status === 'completed' ? '✅ Zakończony' : (w.status === 'skipped' ? '❌ Pominięty' : '⏳ Plan')}</span>
+                        </div>
                     </div>
-                    <i data-lucide="chevron-right"></i>
+                    <i data-lucide="chevron-right" style="color:var(--text-secondary)"></i>
                 </div>
             `).join('');
             
@@ -1022,53 +1157,55 @@
                 duration_minutes: parseInt(val('wo-duration')) || null, status: val('wo-status')
             };
             const { error } = await supabaseClient.from('workouts').insert([w]);
-            if(!error) { closeModal('modal-workout'); showToast("Trening zapisany"); loadWorkoutsView(); }
+            if(!error) { closeModal('modal-workout'); showToast("Trening pomyślnie zapisany!"); loadWorkoutsView(); if(!$('view-dashboard').classList.contains('hidden')) loadDashboard(); }
         }
 
-        // Exercises DB
+        // Baza Ćwiczeń
         async function loadExercises() {
-            const { data } = await supabaseClient.from('exercises').select('*').eq('user_id', state.user.id);
+            const { data } = await supabaseClient.from('exercises').select('*').eq('user_id', state.user.id).order('name');
             state.exercises = data || [];
         }
         function renderExercises() {
             const q = val('exercise-search').toLowerCase();
             const filtered = state.exercises.filter(e => e.name.toLowerCase().includes(q));
             html('exercises-grid', filtered.map(e => `
-                <div class="card p-4">
-                    <strong>${e.name}</strong>
-                    <div class="text-sm text-secondary mb-2">${e.muscle_group}</div>
-                    <p class="text-sm">${e.description || ''}</p>
-                    <button class="btn btn-outline btn-sm mt-2" onclick="deleteExercise('${e.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i> Usuń</button>
+                <div class="card p-4 flex flex-col justify-between">
+                    <div>
+                        <strong style="font-size:1.1rem; display:block; margin-bottom:4px;">${e.name}</strong>
+                        <div class="text-sm" style="color:var(--primary); font-weight:600; margin-bottom:12px;">${e.muscle_group}</div>
+                        <p class="text-sm text-secondary">${e.description || 'Brak opisu.'}</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm mt-4 w-100" onclick="deleteExercise('${e.id}')" style="color:var(--danger); border-color:var(--border)"><i data-lucide="trash-2"></i> Usuń z bazy</button>
                 </div>
             `).join(''));
             if(window.lucide) lucide.createIcons();
             
             const sel = $('exec-add-exercise-select');
             if(sel) {
-                sel.innerHTML = '<option value="">Wybierz ćwiczenie...</option>' + state.exercises.map(e => `<option value="${e.id}">${e.name} (${e.muscle_group})</option>`).join('');
+                sel.innerHTML = '<option value="">Wybierz ćwiczenie z bazy...</option>' + state.exercises.map(e => `<option value="${e.id}">${e.name} (${e.muscle_group})</option>`).join('');
             }
         }
         async function saveExercise(e) {
             e.preventDefault();
             const ex = { user_id: state.user.id, name: val('ex-name'), muscle_group: val('ex-muscle'), description: val('ex-desc') };
             const { data, error } = await supabaseClient.from('exercises').insert([ex]).select();
-            if(!error) { state.exercises.push(data[0]); renderExercises(); closeModal('modal-exercise'); showToast("Zapisano ćwiczenie"); }
+            if(!error) { state.exercises.push(data[0]); renderExercises(); closeModal('modal-exercise'); showToast("Dodano nowe ćwiczenie!"); }
         }
         async function deleteExercise(id) {
-            if(!confirm("Usunąć ćwiczenie?")) return;
+            if(!confirm("Czy usunąć to ćwiczenie z bazy?")) return;
             await supabaseClient.from('exercises').delete().eq('id', id);
             state.exercises = state.exercises.filter(e => e.id !== id);
-            renderExercises(); showToast("Usunięto");
+            renderExercises(); showToast("Usunięto ćwiczenie.");
         }
 
-        // Workout Execution (Sets & Reps)
+        // Trening - Wykonanie (Serie/Powtórzenia)
         async function openExecuteWorkout(id) {
             currentActiveWorkoutId = id;
             openModal('modal-execute-workout');
             html('exec-wo-exercises', '<div class="text-center p-4"><div class="spinner"></div></div>');
             
             const { data: wo } = await supabaseClient.from('workouts').select('*').eq('id', id).single();
-            if(wo) html('exec-wo-title', `Trening: ${wo.name}`);
+            if(wo) html('exec-wo-title', `Trening: <span style="color:var(--primary)">${wo.name}</span>`);
             
             loadWorkoutExercises();
         }
@@ -1078,7 +1215,7 @@
             const { data: weList } = await supabaseClient.from('workout_exercises').select('*, exercises(*)').eq('workout_id', currentActiveWorkoutId).order('exercise_order');
             
             if(!weList || weList.length === 0) {
-                html('exec-wo-exercises', '<p class="text-secondary text-center p-4">Brak dodanych ćwiczeń. Wybierz ćwiczenie z listy powyżej.</p>');
+                html('exec-wo-exercises', '<div class="card text-center p-4"><p class="text-secondary">Twój plan jest na razie pusty. Dodaj ćwiczenia z listy na górze.</p></div>');
                 return;
             }
 
@@ -1089,30 +1226,31 @@
             weList.forEach((we, idx) => {
                 const exSets = (sets || []).filter(s => s.workout_exercise_id === we.id);
                 h += `
-                <div class="card p-4">
-                    <div class="flex justify-between items-center mb-2">
-                        <h4>${idx+1}. ${we.exercises.name}</h4>
-                        <button onclick="removeWorkoutExercise('${we.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i></button>
+                <div class="card p-4" style="border-top: 4px solid var(--primary)">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 style="margin:0; font-size:1.1rem">${idx+1}. ${we.exercises.name}</h4>
+                        <button onclick="removeWorkoutExercise('${we.id}')" style="color:var(--danger)" title="Usuń ćwiczenie"><i data-lucide="trash-2"></i></button>
                     </div>
-                    <table class="data-table text-sm mb-2">
-                        <thead><tr><th width="40px">Seria</th><th>kg</th><th>Powt.</th><th width="40px">Gotowe</th></tr></thead>
+                    <table class="data-table text-sm mb-4" style="background:var(--bg-base); border-radius:var(--radius-md);">
+                        <thead><tr><th style="width:40px; text-align:center">Seria</th><th>Ciężar (kg)</th><th>Powtórzenia</th><th style="width:60px; text-align:center">Zrobione</th></tr></thead>
                         <tbody>
                             ${exSets.map(s => `
                                 <tr>
-                                    <td class="text-center">${s.set_number}</td>
-                                    <td><input type="number" step="0.5" value="${s.weight||0}" id="w-${s.id}" class="mb-0" style="padding:4px"></td>
-                                    <td><input type="number" value="${s.repetitions||0}" id="r-${s.id}" class="mb-0" style="padding:4px"></td>
+                                    <td class="text-center font-bold">${s.set_number}</td>
+                                    <td><input type="number" step="0.5" value="${s.weight||0}" id="w-${s.id}" class="mb-0" style="padding:8px; border-color:transparent; font-weight:600"></td>
+                                    <td><input type="number" value="${s.repetitions||0}" id="r-${s.id}" class="mb-0" style="padding:8px; border-color:transparent; font-weight:600"></td>
                                     <td class="text-center">
-                                        <input type="checkbox" id="c-${s.id}" ${s.completed ? 'checked' : ''} onchange="updateSet('${s.id}')" style="width:20px;height:20px">
+                                        <input type="checkbox" id="c-${s.id}" ${s.completed ? 'checked' : ''} onchange="updateSet('${s.id}')" style="width:24px;height:24px; cursor:pointer; accent-color:var(--success)">
                                     </td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
-                    <div class="flex gap-2">
-                        <button class="btn btn-outline btn-sm" onclick="addSet('${we.id}', ${exSets.length + 1})"><i data-lucide="plus"></i> Seria</button>
-                        <button class="btn btn-outline btn-sm" onclick="startTimer(90)"><i data-lucide="timer"></i> 90s</button>
-                        <button class="btn btn-outline btn-sm" onclick="startTimer(120)"><i data-lucide="timer"></i> 120s</button>
+                    <div class="flex gap-2" style="flex-wrap: wrap;">
+                        <button class="btn btn-primary btn-sm" onclick="addSet('${we.id}', ${exSets.length + 1})"><i data-lucide="plus"></i> Dodaj Serię</button>
+                        <button class="btn btn-outline btn-sm" onclick="startTimer(60)"><i data-lucide="timer"></i> 60s przerw.</button>
+                        <button class="btn btn-outline btn-sm" onclick="startTimer(90)"><i data-lucide="timer"></i> 90s przerw.</button>
+                        <button class="btn btn-outline btn-sm" onclick="startTimer(120)"><i data-lucide="timer"></i> 120s przerw.</button>
                     </div>
                 </div>`;
             });
@@ -1135,7 +1273,7 @@
         }
         
         async function removeWorkoutExercise(weId) {
-            if(!confirm("Usunąć to ćwiczenie z treningu?")) return;
+            if(!confirm("Usuwasz całe ćwiczenie z tego treningu. Kontynuować?")) return;
             await supabaseClient.from('workout_exercises').delete().eq('id', weId);
             loadWorkoutExercises();
         }
@@ -1150,22 +1288,26 @@
             const r = parseInt(val(`r-${setId}`)) || 0;
             const c = $(`c-${setId}`).checked;
             await supabaseClient.from('workout_sets').update({ weight: w, repetitions: r, completed: c }).eq('id', setId);
-            if(c) startTimer(90); 
+            
+            if(c) {
+                showToast("Seria zaliczona! Odpocznij.");
+                startTimer(90); // Automatyczny timer
+            }
         }
 
         async function completeWorkout() {
             if(!currentActiveWorkoutId) return;
             await supabaseClient.from('workouts').update({ status: 'completed' }).eq('id', currentActiveWorkoutId);
-            showToast("Trening zakończony! Dobra robota!");
+            showToast("Brawo! Trening wykonany!");
             closeModal('modal-execute-workout');
             loadWorkoutsView();
-            if($('view-dashboard').classList.contains('hidden')===false) loadDashboard();
+            if(!$('view-dashboard').classList.contains('hidden')) loadDashboard();
         }
 
-        // Rest Timer
+        // Stoper (Przerwy)
         function startTimer(seconds) {
             stopTimer();
-            show('rest-timer-container');
+            $('rest-timer-container').style.display = 'block';
             let timeLeft = seconds;
             const updateUI = () => {
                 const m = Math.floor(timeLeft/60).toString().padStart(2,'0');
@@ -1178,16 +1320,16 @@
                 updateUI();
                 if(timeLeft <= 0) {
                     stopTimer();
-                    showToast("Koniec przerwy! Wracaj do ćwiczeń.", "warning");
+                    showToast("Koniec przerwy! Wracamy do pracy! 🔥");
                 }
             }, 1000);
         }
         function stopTimer() {
             if(restTimerInterval) clearInterval(restTimerInterval);
-            hide('rest-timer-container');
+            $('rest-timer-container').style.display = 'none';
         }
 
-        // Calendar
+        // Kalendarz
         function renderCalendar() {
             const d = state.calendarDate;
             const month = d.getMonth();
@@ -1211,7 +1353,7 @@
                 htmlStr += `
                     <div class="calendar-day ${isToday ? 'today' : ''}" onclick="openDayDetails('${dateStr}')" id="cal-day-${dateStr}">
                         <span class="day-number">${i}</span>
-                        <div class="cal-data-holder text-sm"></div>
+                        <div class="cal-data-holder text-sm flex-col gap-2"></div>
                     </div>
                 `;
             }
@@ -1248,15 +1390,15 @@
                 if(el) {
                     let content = '';
                     if(info.kcal) {
-                        let col = info.kcal > state.goals.calories ? 'var(--danger)' : 'var(--success)';
+                        let col = info.kcal > state.goals.calories ? 'var(--warning)' : 'var(--success)';
                         content += `<div class="day-indicator"><span class="status-dot" style="background:${col}"></span> ${Math.round(info.kcal)} kcal</div>`;
                     }
                     if(info.workout) {
-                        let col = info.workout === 'success' ? 'var(--success)' : 'var(--warning)';
+                        let col = info.workout === 'success' ? 'var(--success)' : 'var(--primary)';
                         content += `<div class="day-indicator"><span class="status-dot" style="background:${col}"></span> Trening</div>`;
                     }
                     if(info.water) {
-                        content += `<div class="day-indicator"><span class="status-dot" style="background:var(--primary)"></span> Woda</div>`;
+                        content += `<div class="day-indicator"><span class="status-dot" style="background:#0ea5e9"></span> Woda</div>`;
                     }
                     el.innerHTML = content;
                 }
@@ -1275,7 +1417,7 @@
         let tempSelectedDay = null;
         function openDayDetails(dateStr) {
             tempSelectedDay = dateStr;
-            html('day-modal-title', `Szczegóły: ${dateStr}`);
+            html('day-modal-title', `Raport dnia: ${dateStr}`);
             html('day-modal-body', `<div class="text-center p-4"><div class="spinner"></div></div>`);
             openModal('modal-day');
             
@@ -1288,15 +1430,16 @@
                 let water=0; (wt.data||[]).forEach(x=>water+=x.amount_ml);
                 
                 let body = `<div class="grid-2">
-                    <div class="card p-3"><strong>🍽️ Dieta:</strong> ${m.data.length} posiłków<br>${Math.round(kc)} / ${state.goals.calories} kcal</div>
-                    <div class="card p-3"><strong>💧 Woda:</strong><br>${water} / ${state.goals.water} ml</div>
+                    <div class="card p-4" style="margin:0"><strong><i data-lucide="utensils" style="color:var(--primary)"></i> Dieta:</strong><br><br>${m.data.length} posiłków<br><strong style="font-size:1.2rem">${Math.round(kc)}</strong> / ${state.goals.calories} kcal</div>
+                    <div class="card p-4" style="margin:0"><strong><i data-lucide="droplet" style="color:#0ea5e9"></i> Nawodnienie:</strong><br><br><strong style="font-size:1.2rem">${water}</strong> / ${state.goals.water} ml</div>
                 </div>`;
                 if(w.data && w.data.length > 0) {
-                    body += `<div class="card p-3 mt-2"><strong>🏋️ Trening:</strong> ${w.data[0].name} (${w.data[0].status})</div>`;
+                    body += `<div class="card p-4 mt-4" style="margin-bottom:0"><strong><i data-lucide="dumbbell" style="color:var(--success)"></i> Trening:</strong><br><br>${w.data[0].name} (Status: ${w.data[0].status})</div>`;
                 } else {
-                    body += `<div class="card p-3 mt-2 text-secondary">Brak treningu</div>`;
+                    body += `<div class="card p-4 mt-4 text-secondary text-center" style="margin-bottom:0; border-style:dashed;">Odpoczynek (Brak treningu)</div>`;
                 }
                 html('day-modal-body', body);
+                if(window.lucide) lucide.createIcons();
             });
         }
         function goToDayDetails() {
@@ -1305,41 +1448,68 @@
             navigate('dashboard');
         }
 
-        // Weight
+        // Pomiary Wagi
         async function loadWeight() {
             const { data } = await supabaseClient.from('weight_logs').select('*').eq('user_id', state.user.id).order('log_date', { ascending: true });
             state.weight = data || [];
             
             html('weight-history-body', state.weight.map(w => `
-                <tr><td>${w.log_date}</td><td><strong>${w.weight} kg</strong></td><td>${w.notes||''}</td>
-                <td><button onclick="deleteWeight('${w.id}')" style="color:var(--danger)"><i data-lucide="trash-2"></i></button></td></tr>
+                <tr><td>${w.log_date}</td><td><strong style="color:var(--primary); font-size:1.1rem;">${w.weight} kg</strong></td><td>${w.notes||'-'}</td>
+                <td><button onclick="deleteWeight('${w.id}')" class="btn-outline" style="color:var(--danger); padding:6px; border-radius:50%;"><i data-lucide="trash-2" style="width:16px;"></i></button></td></tr>
             `).reverse().join(''));
             if(window.lucide) lucide.createIcons();
             
             if(state.charts.weight) state.charts.weight.destroy();
             const ctx = document.getElementById('weightChart').getContext('2d');
+            
+            // Stylizacja wykresu
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4f46e5';
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(79, 70, 229, 0.5)');
+            gradient.addColorStop(1, 'rgba(79, 70, 229, 0.0)');
+
             state.charts.weight = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: state.weight.map(w => w.log_date),
-                    datasets: [{ label: 'Waga (kg)', data: state.weight.map(w => w.weight), borderColor: '#3b82f6', tension: 0.1, fill: false }]
+                    datasets: [{ 
+                        label: 'Waga (kg)', 
+                        data: state.weight.map(w => w.weight), 
+                        borderColor: primaryColor, 
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: primaryColor,
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        tension: 0.4, 
+                        fill: true 
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
             });
         }
         async function saveWeight(e) {
             e.preventDefault();
             const payload = { user_id: state.user.id, log_date: val('weight-date'), weight: parseFloat(val('weight-val')), notes: val('weight-notes') };
             const { error } = await supabaseClient.from('weight_logs').insert([payload]);
-            if(!error) { closeModal('modal-weight'); showToast("Zapisano wagę"); loadWeight(); }
+            if(!error) { closeModal('modal-weight'); showToast("Pomiar wagi dodany pomyślnie."); loadWeight(); }
         }
         async function deleteWeight(id) {
-            if(!confirm("Usunąć?")) return;
+            if(!confirm("Usunąć ten pomiar wagi?")) return;
             await supabaseClient.from('weight_logs').delete().eq('id', id);
-            loadWeight(); showToast("Usunięto");
+            loadWeight(); showToast("Usunięto.");
         }
 
-        // Stats
+        // Statystyki / Wykresy
         async function loadStats() {
             const days = parseInt(val('stats-range'));
             const end = new Date();
@@ -1359,6 +1529,8 @@
             
             const labels = Object.keys(grouped).sort();
             const dataKcal = labels.map(d => grouped[d].k);
+            const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4f46e5';
+            const warningColor = getComputedStyle(document.documentElement).getPropertyValue('--warning').trim() || '#f59e0b';
             
             if(state.charts.kcal) state.charts.kcal.destroy();
             state.charts.kcal = new Chart($('chart-calories').getContext('2d'), {
@@ -1366,8 +1538,8 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Spożyte Kcal', data: dataKcal, backgroundColor: '#3b82f6' },
-                        { label: 'Cel Kcal', data: labels.map(()=>state.goals.calories), type: 'line', borderColor: '#eab308', borderDash: [5,5], fill: false }
+                        { label: 'Spożyte Kcal', data: dataKcal, backgroundColor: primaryColor, borderRadius: 4 },
+                        { label: 'Cel Kcal', data: labels.map(()=>state.goals.calories), type: 'line', borderColor: warningColor, borderDash: [5,5], fill: false, borderWidth: 2, pointRadius: 0 }
                     ]
                 }
             });
@@ -1382,15 +1554,22 @@
                 type: 'doughnut',
                 data: {
                     labels: ['Białko', 'Węglowodany', 'Tłuszcze'],
-                    datasets: [{ data: [avgP, avgC, avgF], backgroundColor: ['#22c55e', '#3b82f6', '#eab308'] }]
-                }
+                    datasets: [{ 
+                        data: [Math.round(avgP), Math.round(avgC), Math.round(avgF)], 
+                        backgroundColor: ['#10b981', primaryColor, warningColor],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
             });
         }
 
-        // Settings & Utils
+        // Ustawienia
         function changeTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
+            // Re-render charts to pick up theme colors if needed (optional optimization)
         }
         
         function exportData() {
@@ -1399,14 +1578,15 @@
                     showToast("Błąd pobierania danych", "error");
                     return;
                 }
-                console.log("Dane do eksportu:", data);
-                showToast("Funkcja eksportu CSV w przygotowaniu!");
+                showToast("Funkcja pobierania CSV w przygotowaniu. Zebrane logi w konsoli.");
+                console.log("Twoje logi (gotowe do przetworzenia na CSV):", data);
             });
         }
 
         async function deleteAccount() {
-            if(!confirm("CZY NA PEWNO CHCESZ USUNĄĆ KONTO? Te operacja jest nieodwracalna!")) return;
-            alert("Funkcja usuwania konta musi zostać potwierdzona e-mailem. (Wymaga konfiguracji w panelu Supabase)");
+            if(confirm("🚨 CZY NA PEWNO CHCESZ TRWALE USUNĄĆ KONTO I WSZYSTKIE DANE?\nTa operacja jest nieodwracalna!")) {
+                alert("Aby ze względów bezpieczeństwa w pełni skasować konto, opcja musi być potwierdzona mailowo (wymaga włączenia na backendzie Supabase). Skontaktuj się z adminem.");
+            }
         }
 
         // ==========================================
@@ -1414,10 +1594,18 @@
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
             const today = formatDate(new Date());
+            // Pre-fillowanie dat w formularzach
             setVal('meal-date', today);
             setVal('weight-date', today);
             setVal('wo-date', today);
             
+            // Kliknięcie w tło zamyka modal (UX poprawka)
+            document.querySelectorAll('.modal-overlay').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    if (e.target === el) closeModal(el.id);
+                });
+            });
+
             checkSession();
         });
 
