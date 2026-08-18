@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitPlan - Kalkulator Makro</title>
+    
+    <style>
+        /* === GŁÓWNE STYLE I KOLORY === */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #121212;
+            --card-border: #222222;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --accent-color: #d4a373;
+            --accent-hover: #b0865c;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* === NAWIGACJA GÓRNA === */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 30px 0; flex-wrap: wrap; gap: 15px; }
+        .logo { color: var(--accent-color); font-size: 22px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        header nav { display: flex; gap: 20px; font-size: 13px; font-weight: bold; letter-spacing: 1px; }
+        header nav a { color: var(--text-muted); text-decoration: none; text-transform: uppercase; }
+        header nav a:hover { color: var(--text-main); }
+        header nav a.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 5px; }
+
+        /* === NAWIGACJA MOBILNA === */
+        .mobile-nav { display: none; background-color: var(--bg-color); border-top: 1px solid var(--card-border); position: fixed; bottom: 0; left: 0; width: 100%; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .mobile-nav a { color: var(--text-muted); text-decoration: none; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; text-transform: uppercase; }
+        .mobile-nav a.active { color: var(--accent-color); }
+        .mobile-nav .icon { font-size: 20px; }
+
+        /* === WIDOK KALKULATORA === */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .calc-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .input-group input, .input-group select {
+            background-color: var(--bg-color);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--accent-color);
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            text-transform: uppercase;
+            font-size: 14px;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Sekcja wyników */
+        #results-section {
+            display: none; /* Ukryte dopóki nie policzymy */
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .result-box {
+            background-color: var(--bg-color);
+            border: 1px solid var(--card-border);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .result-box span {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .result-box strong {
+            font-size: 20px;
+            color: var(--accent-color);
+        }
+
+        /* === MEDIA QUERIES === */
+        @media (max-width: 900px) {
+            body { padding-bottom: 80px; }
+            header nav { display: none; }
+            .mobile-nav { display: flex; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .results-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GÓRNA NAWIGACJA -->
+    <header>
+        <div class="logo"><span>||=</span> FITPLAN</div>
+        <nav>
+            <a href="index.html">PULPIT</a>
+            <a href="dieta.html">DIETA</a>
+            <a href="trening.html">TRENING</a>
+            <a href="postepy.html">POSTĘPY</a>
+            <a href="kalkulator.html" class="active">KALKULATOR</a>
+        </nav>
+        <div style="color: var(--text-muted); font-size: 20px;">⚙</div>
+    </header>
+
+    <main style="max-width: 800px; margin: 0 auto;">
+        
+        <div class="card">
+            <div class="calc-title"><span style="color: var(--accent-color);">🧮</span> Kalkulator Zapotrzebowania</div>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Wypełnij poniższe dane, aby obliczyć swoje dzienne zapotrzebowanie na kalorie i makroskładniki.</p>
+
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Płeć</label>
+                    <select id="calc-gender">
+                        <option value="male">Mężczyzna</option>
+                        <option value="female">Kobieta</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Wiek (lata)</label>
+                    <input type="number" id="calc-age" placeholder="np. 25" required>
+                </div>
+                <div class="input-group">
+                    <label>Waga (kg)</label>
+                    <input type="number" id="calc-weight" placeholder="np. 80" required>
+                </div>
+                <div class="input-group">
+                    <label>Wzrost (cm)</label>
+                    <input type="number" id="calc-height" placeholder="np. 180" required>
+                </div>
+                <div class="input-group full-width">
+                    <label>Poziom Aktywności</label>
+                    <select id="calc-activity">
+                        <option value="1.2">Brak aktywności, praca siedząca</option>
+                        <option value="1.375">Niska aktywność (1-2 treningi w tyg.)</option>
+                        <option value="1.55" selected>Średnia aktywność (3-4 treningi w tyg.)</option>
+                        <option value="1.725">Wysoka aktywność (5-6 treningów w tyg.)</option>
+                        <option value="1.9">Bardzo wysoka aktywność (praca fizyczna + treningi)</option>
+                    </select>
+                </div>
+                <div class="input-group full-width">
+                    <label>Twój Cel</label>
+                    <select id="calc-goal">
+                        <option value="-500">Redukcja (chcę schudnąć)</option>
+                        <option value="0" selected>Utrzymanie wagi</option>
+                        <option value="300">Masa (chcę zbudować mięśnie)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn" onclick="calculateMacros()">Oblicz Zapotrzebowanie</button>
+        </div>
+
+        <!-- SEKCJA WYNIKÓW (Początkowo ukryta) -->
+        <div class="card" id="results-section">
+            <div class="calc-title"><span style="color: var(--accent-color);">🎯</span> Twój Wynik</div>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Na podstawie podanych informacji, oto Twój sugerowany plan:</p>
+            
+            <div class="results-grid">
+                <div class="result-box">
+                    <span>Kalorie</span>
+                    <strong id="res-kcal">0</strong>
+                </div>
+                <div class="result-box">
+                    <span style="color: #4da6ff;">Białko</span>
+                    <strong id="res-protein" style="color: #4da6ff;">0g</strong>
+                </div>
+                <div class="result-box">
+                    <span style="color: #ffcc00;">Tłuszcze</span>
+                    <strong id="res-fats" style="color: #ffcc00;">0g</strong>
+                </div>
+                <div class="result-box">
+                    <span style="color: #66cc66;">Węgle</span>
+                    <strong id="res-carbs" style="color: #66cc66;">0g</strong>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- DOLNA NAWIGACJA -->
+    <nav class="mobile-nav">
+        <a href="index.html"><span class="icon">🏠</span><span>Pulpit</span></a>
+        <a href="dieta.html"><span class="icon">🍴</span><span>Dieta</span></a>
+        <a href="trening.html"><span class="icon">🏋️</span><span>Trening</span></a>
+        <a href="postepy.html"><span class="icon">📈</span><span>Postępy</span></a>
+        <a href="kalkulator.html" class="active"><span class="icon">🧮</span><span>Kalkulator</span></a>
+    </nav>
+
+    <!-- SKRYPT DO OBLICZEŃ -->
+    <script>
+        function calculateMacros() {
+            // Pobieranie wartości z formularza
+            const gender = document.getElementById('calc-gender').value;
+            const age = parseFloat(document.getElementById('calc-age').value);
+            const weight = parseFloat(document.getElementById('calc-weight').value);
+            const height = parseFloat(document.getElementById('calc-height').value);
+            const activity = parseFloat(document.getElementById('calc-activity').value);
+            const goal = parseFloat(document.getElementById('calc-goal').value);
+
+            // Walidacja - sprawdzenie czy użytkownik wpisał dane
+            if(!age || !weight || !height) {
+                alert("Wypełnij wszystkie pola poprawnie!");
+                return;
+            }
+
+            // Wzór Mifflina-St Jeora na podstawową przemianę materii (BMR)
+            let bmr;
+            if (gender === 'male') {
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+            } else {
+                bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+            }
+
+            // TDEE = BMR * Poziom aktywności + Cel (Masa/Redukcja)
+            const tdee = Math.round((bmr * activity) + goal);
+
+            // Obliczanie makroskładników (Standardowy podział sportowy)
+            // Białko: 2g na kg masy ciała
+            const protein = Math.round(weight * 2); 
+            // Tłuszcze: 1g na kg masy ciała
+            const fats = Math.round(weight * 1);
+            // Węglowodany: reszta kalorii (1g białka=4kcal, 1g tłuszczu=9kcal, 1g węgli=4kcal)
+            const carbs = Math.round((tdee - (protein * 4) - (fats * 9)) / 4);
+
+            // Wrzucanie wyników na stronę
+            document.getElementById('res-kcal').innerText = tdee;
+            document.getElementById('res-protein').innerText = protein + 'g';
+            document.getElementById('res-fats').innerText = fats + 'g';
+            document.getElementById('res-carbs').innerText = carbs + 'g';
+
+            // Pokazanie sekcji z wynikami
+            document.getElementById('results-section').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
