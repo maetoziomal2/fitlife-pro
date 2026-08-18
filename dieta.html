@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitPlan - Plan Diety</title>
     
-    <!-- Biblioteka Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -30,39 +29,34 @@
         .date-btn:hover { color: var(--accent-color); }
         
         .meal-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; margin-bottom: 15px; }
-        .meal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 15px; margin-bottom: 15px; }
+        .meal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; }
         .meal-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold; }
-        .meal-stats { display: flex; gap: 15px; font-size: 12px; color: var(--text-muted); }
-        .meal-stats span { display: flex; flex-direction: column; align-items: flex-end; }
-        .meal-stats strong { color: var(--text-main); font-size: 14px; }
         
+        /* STYLE DLA LISTY PRODUKTÓW W POSIŁKU */
+        .food-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .food-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: var(--bg-color); border: 1px solid var(--card-border); border-radius: 8px; }
+        .food-name { font-size: 13px; font-weight: bold; }
+        .food-macros { font-size: 11px; color: var(--text-muted); margin-top: 3px; display: flex; gap: 10px; }
+        .food-kcal { font-size: 14px; font-weight: bold; color: var(--accent-color); }
+
         .add-product-btn { background-color: transparent; color: var(--accent-color); border: 1px dashed var(--accent-color); padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; transition: 0.3s; }
         .add-product-btn:hover { background-color: rgba(212, 163, 115, 0.1); }
 
-        /* === STYLE DLA OKIENKA (MODALA) === */
-        .modal-overlay {
-            display: none; /* Domyślnie ukryte */
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-            justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background-color: var(--card-bg);
-            border: 1px solid var(--accent-color);
-            border-radius: 12px;
-            padding: 25px;
-            width: 90%;
-            max-width: 400px;
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background-color: var(--card-bg); border: 1px solid var(--accent-color); border-radius: 12px; padding: 25px; width: 90%; max-width: 400px; }
         .modal-content h3 { margin-top: 0; color: var(--accent-color); }
         .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .modal-grid input { background-color: var(--bg-color); border: 1px solid var(--card-border); color: white; padding: 10px; border-radius: 6px; width: 90%; }
+        .input-full { width: 100%; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .input-full label { font-size: 11px; color: var(--text-muted); }
+        .input-full input { background-color: var(--bg-color); border: 1px solid var(--card-border); color: white; padding: 10px; border-radius: 6px; width: 90%; outline: none; }
+        .modal-grid input { background-color: var(--bg-color); border: 1px solid var(--card-border); color: white; padding: 10px; border-radius: 6px; width: 85%; outline: none; }
+        .modal-grid input:focus, .input-full input:focus { border-color: var(--accent-color); }
+        
         .modal-buttons { display: flex; gap: 10px; }
         .btn-save { background-color: var(--accent-color); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; }
         .btn-cancel { background-color: transparent; color: white; border: 1px solid var(--text-muted); padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; }
 
-        @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } .meal-header { flex-direction: column; align-items: flex-start; gap: 15px; } .meal-stats { width: 100%; justify-content: space-between; } }
+        @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } }
     </style>
 </head>
 <body>
@@ -88,54 +82,56 @@
                 <span>Dzisiaj</span>
                 <button class="date-btn">&gt;</button>
             </div>
-            <!-- Tutaj wstawimy zjedzone kalorie / cel -->
             <div style="font-weight: bold; color: var(--accent-color);" id="top-kcal-summary">0 / 0 kcal</div>
         </div>
 
+        <!-- ŚNIADANIE -->
         <div class="meal-card">
-            <div class="meal-header">
-                <div class="meal-title"><span>🍳</span> Śniadanie</div>
-            </div>
-            <!-- Kliknięcie otwiera okienko z nazwą posiłku -->
+            <div class="meal-header"><div class="meal-title"><span>🍳</span> Śniadanie</div></div>
+            <div class="food-list" id="list-Śniadanie"></div> <!-- Tu wpadną produkty -->
             <button class="add-product-btn" onclick="openModal('Śniadanie')">+ Dodaj produkt</button>
         </div>
 
+        <!-- II ŚNIADANIE -->
         <div class="meal-card">
-            <div class="meal-header">
-                <div class="meal-title"><span>🥪</span> II Śniadanie</div>
-            </div>
+            <div class="meal-header"><div class="meal-title"><span>🥪</span> II Śniadanie</div></div>
+            <div class="food-list" id="list-II-Śniadanie"></div>
             <button class="add-product-btn" onclick="openModal('II Śniadanie')">+ Dodaj produkt</button>
         </div>
 
+        <!-- OBIAD -->
         <div class="meal-card">
-            <div class="meal-header">
-                <div class="meal-title"><span>🥩</span> Obiad</div>
-            </div>
+            <div class="meal-header"><div class="meal-title"><span>🥩</span> Obiad</div></div>
+            <div class="food-list" id="list-Obiad"></div>
             <button class="add-product-btn" onclick="openModal('Obiad')">+ Dodaj produkt</button>
         </div>
 
+        <!-- PODWIECZOREK -->
         <div class="meal-card">
-            <div class="meal-header">
-                <div class="meal-title"><span>🥑</span> Podwieczorek</div>
-            </div>
+            <div class="meal-header"><div class="meal-title"><span>🥑</span> Podwieczorek</div></div>
+            <div class="food-list" id="list-Podwieczorek"></div>
             <button class="add-product-btn" onclick="openModal('Podwieczorek')">+ Dodaj produkt</button>
         </div>
 
+        <!-- KOLACJA -->
         <div class="meal-card">
-            <div class="meal-header">
-                <div class="meal-title"><span>🥗</span> Kolacja</div>
-            </div>
+            <div class="meal-header"><div class="meal-title"><span>🥗</span> Kolacja</div></div>
+            <div class="food-list" id="list-Kolacja"></div>
             <button class="add-product-btn" onclick="openModal('Kolacja')">+ Dodaj produkt</button>
         </div>
 
     </main>
 
-    <!-- UKRYTE OKIENKO (MODAL) DO DODAWANIA PRODUKTÓW -->
+    <!-- OKIENKO MODAL -->
     <div class="modal-overlay" id="add-modal">
         <div class="modal-content">
             <h3 id="modal-title">Dodaj do: ...</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Wpisz wartości odżywcze produktu/posiłku.</p>
             
+            <div class="input-full">
+                <label>Nazwa (np. Płatki owsiane z mlekiem)</label>
+                <input type="text" id="add-name" placeholder="Co zjadasz?">
+            </div>
+
             <div class="modal-grid">
                 <div>
                     <label style="font-size: 11px; color: var(--accent-color);">Kalorie (kcal)</label>
@@ -175,26 +171,64 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Zmienna przechowująca to, co obecnie jest już w bazie, żebyśmy mogli do tego dodawać
         let currentDailyStats = {};
+        let activeMealCategory = ""; // Zapamiętuje, do którego posiłku właśnie dodajemy
 
-        // 1. POBIERANIE DANYCH (Wyświetlanie sumy u góry)
-        async function loadDietSummary() {
+        // POBIERANIE WYNIKÓW I LISTY PRODUKTÓW
+        async function loadDietData() {
+            // 1. Górny licznik (tak jak było)
             let { data: daily } = await supabaseClient.from('daily_stats').select('*').limit(1).single();
             let { data: goals } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
-            
             if (daily) currentDailyStats = daily;
             if (!goals) goals = { target_kcal: 2500 };
-
             document.getElementById('top-kcal-summary').innerText = `${currentDailyStats.calories_consumed || 0} / ${goals.target_kcal} kcal`;
-        }
-        loadDietSummary();
 
-        // 2. FUNKCJE OKIENKA (MODALA)
+            // 2. NOWOŚĆ: Pobieranie listy jedzenia
+            const { data: foodLogs } = await supabaseClient.from('food_log').select('*');
+            
+            // Czyszczenie list (żeby się nie dublowały po odświeżeniu)
+            const categories = ['Śniadanie', 'II-Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja'];
+            categories.forEach(cat => {
+                const el = document.getElementById(`list-${cat}`);
+                if(el) el.innerHTML = '';
+            });
+
+            // Wrzucanie jedzenia do odpowiednich pudełek
+            if (foodLogs) {
+                foodLogs.forEach(food => {
+                    // Zamieniamy spację na myślnik dla ID (np. II Śniadanie -> II-Śniadanie)
+                    let safeId = `list-${food.meal_category.replace(' ', '-')}`;
+                    const listContainer = document.getElementById(safeId);
+                    
+                    if (listContainer) {
+                        const html = `
+                        <div class="food-item">
+                            <div>
+                                <div class="food-name">${food.food_name || 'Brak nazwy'}</div>
+                                <div class="food-macros">
+                                    <span style="color: #4da6ff">B: ${food.protein}g</span>
+                                    <span style="color: #ffcc00">T: ${food.fats}g</span>
+                                    <span style="color: #66cc66">W: ${food.carbs}g</span>
+                                </div>
+                            </div>
+                            <div class="food-kcal">${food.kcal} kcal</div>
+                        </div>
+                        `;
+                        listContainer.innerHTML += html;
+                    }
+                });
+            }
+        }
+        
+        loadDietData();
+
+        // OBSŁUGA OKIENKA (MODALA)
         function openModal(mealName) {
+            activeMealCategory = mealName;
             document.getElementById('modal-title').innerText = "Dodaj do: " + mealName;
             
-            // Czyszczenie okienek po poprzednim dodawaniu
+            // Czyszczenie po poprzednim
+            document.getElementById('add-name').value = '';
             document.getElementById('add-kcal').value = '';
             document.getElementById('add-protein').value = '';
             document.getElementById('add-fats').value = '';
@@ -207,15 +241,31 @@
             document.getElementById('add-modal').style.display = 'none';
         }
 
-        // 3. DODAWANIE JEDZENIA DO BAZY (Wersja poprawiona)
+        // ZAPIS DO BAZY DANYCH
         async function saveFoodToDatabase() {
-            // Pobieramy wpisane wartości (jeśli puste, traktujemy jako 0)
+            const inputName = document.getElementById('add-name').value || "Produkt dodany ręcznie";
             const inputKcal = parseInt(document.getElementById('add-kcal').value) || 0;
             const inputProtein = parseInt(document.getElementById('add-protein').value) || 0;
             const inputFats = parseInt(document.getElementById('add-fats').value) || 0;
             const inputCarbs = parseInt(document.getElementById('add-carbs').value) || 0;
 
-            // Zauważ: nie wysyłamy już "id", tylko same makroskładniki!
+            // KROK A: Zapisz produkt do nowej tabeli "food_log"
+            const { error: logError } = await supabaseClient.from('food_log').insert([{
+                meal_category: activeMealCategory,
+                food_name: inputName,
+                kcal: inputKcal,
+                protein: inputProtein,
+                fats: inputFats,
+                carbs: inputCarbs
+            }]);
+
+            if (logError) {
+                console.error("Błąd zapisu na listę:", logError);
+                alert("Wystąpił błąd przy dodawaniu produktu.");
+                return; // Przerwij, jeśli się nie udało
+            }
+
+            // KROK B: Zaktualizuj licznik główny w "daily_stats" (tak jak robiliśmy wcześniej)
             const updates = {
                 calories_consumed: (currentDailyStats.calories_consumed || 0) + inputKcal,
                 protein_consumed: (currentDailyStats.protein_consumed || 0) + inputProtein,
@@ -223,27 +273,11 @@
                 carbs_consumed: (currentDailyStats.carbs_consumed || 0) + inputCarbs
             };
 
-            // Używamy .update() zamiast .upsert() i mówimy, żeby zaktualizował wiersz o konkretnym ID
-            const { error } = await supabaseClient
-                .from('daily_stats')
-                .update(updates)
-                .eq('id', currentDailyStats.id);
+            await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
 
-            if (!error) {
-                closeModal(); // Zamykamy okienko
-                
-                // Aktualizujemy naszą lokalną zmienną, żeby kolejne dodanie w tym samym oknie działało dobrze
-                currentDailyStats.calories_consumed = updates.calories_consumed;
-                currentDailyStats.protein_consumed = updates.protein_consumed;
-                currentDailyStats.fats_consumed = updates.fats_consumed;
-                currentDailyStats.carbs_consumed = updates.carbs_consumed;
-                
-                loadDietSummary(); // Odświeżamy wynik u góry strony
-                alert("Dodano pomyślnie! Zobacz zmiany na Pulpicie.");
-            } else {
-                console.error("Błąd bazy:", error);
-                alert("Wystąpił błąd przy zapisie. Sprawdź konsolę.");
-            }
+            // Jeśli wszystko się udało:
+            closeModal(); 
+            loadDietData(); // Odśwież widok strony (zaktualizuje licznik i listę jedzenia)
         }
     </script>
 </body>
