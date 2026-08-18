@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitPlan - Plan Treningowy</title>
     
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4a373">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -23,13 +28,16 @@
         .mobile-nav a.active { color: var(--accent-color); }
         .mobile-nav .icon { font-size: 20px; }
 
-        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background-color: var(--card-bg); border: 1px solid var(--card-border); padding: 15px 20px; border-radius: 12px; }
-        .month-selector { display: flex; align-items: center; gap: 15px; font-weight: bold; text-transform: uppercase; font-size: 14px; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background-color: var(--card-bg); border: 1px solid var(--card-border); padding: 15px 20px; border-radius: 12px; flex-wrap: wrap; gap: 15px; }
+        .month-selector { display: flex; align-items: center; gap: 15px; font-weight: bold; text-transform: uppercase; font-size: 14px; margin: 0 auto; }
         .month-btn { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 5px 10px; }
         .month-btn:hover { color: var(--accent-color); }
         
         .btn { background-color: var(--accent-color); color: #000; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 12px; transition: 0.3s; }
         .btn:hover { background-color: var(--accent-hover); }
+        .btn-outline { background: transparent; color: var(--accent-color); border: 1px solid var(--accent-color); padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 12px; transition: 0.3s; }
+        
+        .action-buttons { display: flex; gap: 10px; width: 100%; justify-content: center; }
 
         /* KARTY TRENINGOWE */
         .workout-list { display: flex; flex-direction: column; gap: 15px; }
@@ -59,7 +67,6 @@
         .input-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
         .input-group label { font-size: 11px; color: var(--text-muted); }
         .input-group input, .input-group textarea { background-color: var(--bg-color); border: 1px solid var(--card-border); color: white; padding: 12px; border-radius: 6px; outline: none; font-family: inherit; width: 90%; }
-        .input-group input[type="date"] { cursor: pointer; }
         .input-group input:focus, .input-group textarea:focus { border-color: var(--accent-color); }
         .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
         .btn-save { background-color: var(--accent-color); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; }
@@ -67,23 +74,46 @@
 
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); border: 1px dashed var(--card-border); border-radius: 12px; }
 
-        @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } .header-actions { flex-direction: column; gap: 15px; } }
+        /* --- STOPER (PŁYWAJĄCY WIDŻET) --- */
+        .floating-timer {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            background-color: var(--card-bg);
+            border: 2px solid var(--accent-color);
+            border-radius: 30px;
+            padding: 15px;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--accent-color);
+            font-size: 24px;
+        }
+        .floating-timer.expanded {
+            border-radius: 12px;
+            flex-direction: column;
+            padding: 15px;
+            right: 50%;
+            transform: translateX(50%);
+            width: 260px;
+            cursor: default;
+        }
+        .timer-display { font-size: 32px; font-weight: bold; margin-bottom: 15px; color: var(--text-main); text-align: center; }
+        .timer-buttons { display: flex; gap: 8px; justify-content: center; width: 100%; }
+        .timer-buttons button { background-color: var(--accent-color); color: #000; border: none; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; font-size: 14px; }
+        .timer-buttons button.stop { background-color: transparent; border: 1px solid var(--accent-color); color: var(--accent-color); }
 
-        /* --- ANIMACJE PRZEJŚĆ --- */
-        body {
-            animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .page-exit {
-            animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
-        }
-        @keyframes pageFadeIn {
-            0% { opacity: 0; transform: translateY(15px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pageFadeOut {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-15px); }
-        }
+        @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } }
+
+        /* Animacje przejść */
+        body { animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .page-exit { animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important; }
+        @keyframes pageFadeIn { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes pageFadeOut { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-15px); } }
     </style>
 </head>
 <body>
@@ -102,46 +132,58 @@
 
     <main style="max-width: 800px; margin: 0 auto;">
         
-        <!-- Pasek nawigacji miesiąca -->
         <div class="header-actions">
             <div class="month-selector">
                 <button class="month-btn" onclick="changeMonth(-1)">&lt;</button>
                 <span id="month-display" style="min-width: 130px; text-align: center;">Ładowanie...</span>
                 <button class="month-btn" onclick="changeMonth(1)">&gt;</button>
             </div>
-            <button class="btn" onclick="openModal()">+ Zaplanuj trening</button>
+            <div class="action-buttons">
+                <!-- NOWY PRZYCISK KOPIOWANIA -->
+                <button class="btn-outline" onclick="copyPlan()">📋 Kopiuj plan (+4 tyg)</button>
+                <button class="btn" onclick="openModal()">+ Zaplanuj</button>
+            </div>
         </div>
 
-        <!-- Lista treningów na dany miesiąc -->
         <div class="workout-list" id="workout-list-container">
             <div class="empty-state">Ładowanie treningów...</div>
         </div>
 
     </main>
 
-    <!-- UKRYTE OKIENKO (MODAL) DO DODAWANIA TRENINGU -->
+    <!-- WIDŻET STOPERA -->
+    <div id="floating-timer" class="floating-timer" onclick="toggleTimer(event)">
+        <span id="timer-icon">⏱️</span>
+        <div id="timer-expanded-content" style="display: none; width: 100%;">
+            <div class="timer-display" id="timer-display">00:00</div>
+            <div class="timer-buttons">
+                <button onclick="startTimer(60, event)">60s</button>
+                <button onclick="startTimer(90, event)">90s</button>
+                <button onclick="startTimer(120, event)">120s</button>
+                <button class="stop" onclick="stopTimer(event)">⏹</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OKIENKO (MODAL) DO DODAWANIA TRENINGU -->
     <div class="modal-overlay" id="add-modal">
         <div class="modal-content">
             <h3>Zaplanuj Trening</h3>
-            
             <div class="input-group">
                 <label>Data treningu</label>
                 <input type="date" id="add-date" required>
             </div>
-            
             <div class="input-group">
                 <label>Nazwa (np. Góra Ciała, Push, Nogi)</label>
                 <input type="text" id="add-title" placeholder="Co będziesz trenować?" required>
             </div>
-            
             <div class="input-group">
                 <label>Notatki / Ćwiczenia (opcjonalnie)</label>
-                <textarea id="add-details" rows="4" placeholder="Wypisz ćwiczenia, ilość serii i powtórzeń..."></textarea>
+                <textarea id="add-details" rows="4" placeholder="Wypisz ćwiczenia..."></textarea>
             </div>
-
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeModal()">Anuluj</button>
-                <button class="btn-save" onclick="saveWorkout()">Zapisz do kalendarza</button>
+                <button class="btn-save" onclick="saveWorkout()">Zapisz</button>
             </div>
         </div>
     </div>
@@ -155,69 +197,175 @@
     </nav>
 
     <script>
+        // Animacje Przejść
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const target = this.getAttribute('href');
+                if(target && target.includes('.html')) {
+                    e.preventDefault();
+                    document.body.classList.add('page-exit');
+                    setTimeout(() => { window.location.href = target; }, 300);
+                }
+            });
+        });
+
         const supabaseUrl = 'https://ttgeuikoyfcgiboajhcf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Zmienne do śledzenia wybranego miesiąca
         let currentDate = new Date();
-        
-        // Tablice z polskimi nazwami
         const monthNames = ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"];
         const dayNames = ["Ndz", "Pon", "Wto", "Śro", "Czw", "Pią", "Sob"];
 
-        // 1. ZMIANA MIESIĄCA (strzałki w nagłówku)
+        // ====== 1. SYSTEM KOPIOWANIA TRENINGÓW ======
+        async function copyPlan() {
+            // Obliczamy ramy czasowe obecnego miesiąca
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const firstDay = new Date(year, month, 1).toISOString().split('T')[0];
+            const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
+
+            // Pobieramy treningi z tego widoku
+            const { data, error } = await supabaseClient
+                .from('workout_plan')
+                .select('*')
+                .gte('scheduled_date', firstDay)
+                .lte('scheduled_date', lastDay);
+
+            if (error || !data || data.length === 0) {
+                alert("Nie masz żadnych zaplanowanych treningów w tym miesiącu, więc nie ma czego skopiować.");
+                return;
+            }
+
+            const confirmCopy = confirm(`Znaleziono ${data.length} treningów w tym miesiącu. Czy skopiować ten plan idealnie w te same dni tygodnia na następne 4 tygodnie?`);
+            if(!confirmCopy) return;
+
+            // Dodajemy dokładnie 28 dni do każdego treningu (4 tygodnie, więc poniedziałek trafia w poniedziałek)
+            const newWorkouts = data.map(workout => {
+                const oldDate = new Date(workout.scheduled_date);
+                oldDate.setDate(oldDate.getDate() + 28);
+                const newDateString = oldDate.toISOString().split('T')[0];
+                
+                return {
+                    scheduled_date: newDateString,
+                    title: workout.title,
+                    details: workout.details,
+                    is_completed: false // Nowe treningi są domyślnie "niezrobione"
+                };
+            });
+
+            // Wrzucamy pęczek do bazy
+            const { error: insertError } = await supabaseClient.from('workout_plan').insert(newWorkouts);
+
+            if(!insertError) {
+                alert("Wooohoo! Cały plan został powielony o 4 tygodnie do przodu!");
+                changeMonth(1); // Automatycznie przesuwa widok kalendarza do przodu
+            } else {
+                alert("Coś poszło nie tak podczas kopiowania...");
+            }
+        }
+
+        // ====== 2. WIDŻET STOPERA TRENINGOWEGO ======
+        let timerInterval;
+        let timeLeft = 0;
+        const timerEl = document.getElementById('floating-timer');
+        const timerIcon = document.getElementById('timer-icon');
+        const timerContent = document.getElementById('timer-expanded-content');
+        const timerDisplay = document.getElementById('timer-display');
+
+        function toggleTimer(event) {
+            // Zapobiega zamknięciu timera gdy klikasz w jego przyciski
+            if(event.target.tagName === 'BUTTON') return; 
+
+            if (timerEl.classList.contains('expanded')) {
+                timerEl.classList.remove('expanded');
+                timerIcon.style.display = 'block';
+                timerContent.style.display = 'none';
+            } else {
+                timerEl.classList.add('expanded');
+                timerIcon.style.display = 'none';
+                timerContent.style.display = 'block';
+            }
+        }
+
+        function startTimer(seconds, event) {
+            event.stopPropagation(); // Zapobiega ukryciu panelu przy kliknięciu przycisku
+            clearInterval(timerInterval);
+            timeLeft = seconds;
+            updateDisplay();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerDisplay.innerText = "KONIEC!";
+                    // Wibracje na telefonie (jeśli obsługiwane)
+                    if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 500]);
+                }
+            }, 1000);
+        }
+
+        function stopTimer(event) {
+            event.stopPropagation();
+            clearInterval(timerInterval);
+            timeLeft = 0;
+            timerDisplay.innerText = "00:00";
+        }
+
+        function updateDisplay() {
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            timerDisplay.innerText = `${m}:${s}`;
+            
+            // Jeśli zwiniesz stoper podczas odliczania, ikonka pokaże Ci czas
+            if(!timerEl.classList.contains('expanded') && timeLeft > 0) {
+                timerIcon.innerText = `${m}:${s}`;
+                timerIcon.style.fontSize = "16px";
+            } else if (!timerEl.classList.contains('expanded')) {
+                timerIcon.innerText = "⏱️";
+                timerIcon.style.fontSize = "24px";
+            }
+        }
+
+        // ====== OBSŁUGA KALENDARZA (Stary sprawdzony kod) ======
         function changeMonth(step) {
             currentDate.setMonth(currentDate.getMonth() + step);
             updateMonthDisplay();
-            loadWorkouts(); // Po zmianie miesiąca, pobierz treningi dla nowego
+            loadWorkouts();
         }
 
         function updateMonthDisplay() {
-            const monthText = monthNames[currentDate.getMonth()];
-            const yearText = currentDate.getFullYear();
-            document.getElementById('month-display').innerText = `${monthText} ${yearText}`;
+            document.getElementById('month-display').innerText = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
         }
 
-        // 2. POBIERANIE TRENINGÓW Z SUPABASE
         async function loadWorkouts() {
             const listContainer = document.getElementById('workout-list-container');
             listContainer.innerHTML = '<div class="empty-state">Ładowanie treningów...</div>';
 
-            // Obliczamy pierwszy i ostatni dzień wybranego miesiąca (żeby pytać bazę tylko o ten miesiąc)
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            
-            // Formatowanie dat dla Supabase (YYYY-MM-DD)
             const firstDay = new Date(year, month, 1).toISOString().split('T')[0];
-            const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0]; // Dzień "0" następnego miesiąca = ostatni dzień obecnego
+            const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
 
             const { data, error } = await supabaseClient
                 .from('workout_plan')
                 .select('*')
                 .gte('scheduled_date', firstDay)
                 .lte('scheduled_date', lastDay)
-                .order('scheduled_date', { ascending: true }); // Ustaw chronologicznie od najwcześniejszego
+                .order('scheduled_date', { ascending: true });
 
-            if (error) {
-                console.error("Błąd pobierania:", error);
-                listContainer.innerHTML = '<div class="empty-state">Wystąpił błąd przy pobieraniu planu.</div>';
+            if (error || !data || data.length === 0) {
+                listContainer.innerHTML = '<div class="empty-state">Brak zaplanowanych treningów na ten miesiąc.<br><br>Kliknij "+ Zaplanuj", aby coś dodać.</div>';
                 return;
             }
 
-            if (!data || data.length === 0) {
-                listContainer.innerHTML = '<div class="empty-state">Brak zaplanowanych treningów na ten miesiąc.<br><br>Kliknij "+ Zaplanuj trening", aby coś dodać.</div>';
-                return;
-            }
-
-            // Generujemy widok dla każdego treningu
             listContainer.innerHTML = '';
             data.forEach(workout => {
-                // Wyciągamy z daty np. "25" (dzień) i "Wto" (dzień tygodnia)
                 const wDate = new Date(workout.scheduled_date);
                 const dayNumber = wDate.getDate();
                 const dayStr = dayNames[wDate.getDay()];
-                
                 const completedClass = workout.is_completed ? 'completed' : '';
 
                 const html = `
@@ -235,98 +383,46 @@
                     <div class="checkbox-container" onclick="toggleCompleted(${workout.id}, ${workout.is_completed})">
                         <div class="custom-checkbox"></div>
                     </div>
-                </div>
-                `;
+                </div>`;
                 listContainer.innerHTML += html;
             });
         }
 
-        // 3. ODHACZANIE TRENINGU (GOTOWE/NIEGOTOWE)
         async function toggleCompleted(id, currentStatus) {
-            const newStatus = !currentStatus; // Odwracamy (jak było false, dajemy true)
-            
-            const { error } = await supabaseClient
-                .from('workout_plan')
-                .update({ is_completed: newStatus })
-                .eq('id', id);
-
-            if (!error) {
-                loadWorkouts(); // Odśwież widok, żeby ptaszek się zapalił/zgasnął
-            }
+            const { error } = await supabaseClient.from('workout_plan').update({ is_completed: !currentStatus }).eq('id', id);
+            if (!error) loadWorkouts(); 
         }
 
-        // 4. OBSŁUGA OKIENKA MODAL
         function openModal() {
-            // Ustaw dzisiejszą datę jako domyślną w kalendarzyku
-            const todayStr = new Date().toISOString().split('T')[0];
-            document.getElementById('add-date').value = todayStr;
-            
+            document.getElementById('add-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('add-title').value = '';
             document.getElementById('add-details').value = '';
             document.getElementById('add-modal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('add-modal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
 
-        // 5. ZAPIS NOWEGO TRENINGU
         async function saveWorkout() {
             const dateVal = document.getElementById('add-date').value;
             const titleVal = document.getElementById('add-title').value;
             const detailsVal = document.getElementById('add-details').value;
 
-            if (!dateVal || !titleVal) {
-                alert("Wybierz datę i wpisz nazwę treningu!");
-                return;
-            }
+            if (!dateVal || !titleVal) return alert("Wybierz datę i wpisz nazwę treningu!");
 
-            const { error } = await supabaseClient
-                .from('workout_plan')
-                .insert([{
-                    scheduled_date: dateVal,
-                    title: titleVal,
-                    details: detailsVal
-                }]);
+            const { error } = await supabaseClient.from('workout_plan').insert([{ scheduled_date: dateVal, title: titleVal, details: detailsVal }]);
 
             if (!error) {
                 closeModal();
-                // Jeśli dodał trening w innym miesiącu, przełączmy widok na ten miesiąc, żeby go zobaczył
                 const addedDate = new Date(dateVal);
-                currentDate.setFullYear(addedDate.getFullYear());
-                currentDate.setMonth(addedDate.getMonth());
-                
-                updateMonthDisplay();
-                loadWorkouts(); 
+                currentDate.setFullYear(addedDate.getFullYear()); currentDate.setMonth(addedDate.getMonth());
+                updateMonthDisplay(); loadWorkouts(); 
             } else {
-                console.error("Błąd zapisu:", error);
                 alert("Wystąpił błąd przy zapisie treningu.");
             }
         }
 
-        // Start aplikacji
         updateMonthDisplay();
         loadWorkouts();
-
-        // --- PŁYNNE PRZEJŚCIA MIĘDZY KARTAMI ---
-        document.querySelectorAll('nav a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                const target = this.getAttribute('href');
-                
-                // Jeśli link prowadzi do innej zakładki (pliku .html)
-                if(target && target.includes('.html')) {
-                    e.preventDefault(); // Zatrzymujemy natychmiastowy przeskok
-                    
-                    // Odpalamy animację wyjścia
-                    document.body.classList.add('page-exit');
-                    
-                    // Czekamy 300 milisekund i dopiero wtedy zmieniamy stronę
-                    setTimeout(() => {
-                        window.location.href = target;
-                    }, 300);
-                }
-            });
-        });
     </script>
 </body>
 </html>
