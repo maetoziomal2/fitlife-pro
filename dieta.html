@@ -64,6 +64,22 @@
         .btn-cancel { background-color: transparent; color: white; border: 1px solid var(--text-muted); padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; }
 
         @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } }
+
+        /* --- ANIMACJE PRZEJŚĆ --- */
+        body {
+            animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .page-exit {
+            animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        }
+        @keyframes pageFadeIn {
+            0% { opacity: 0; transform: translateY(15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pageFadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-15px); }
+        }
     </style>
 </head>
 <body>
@@ -343,6 +359,26 @@
             closeModal(); 
             loadDietData(); 
         }
+
+        // --- PŁYNNE PRZEJŚCIA MIĘDZY KARTAMI ---
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const target = this.getAttribute('href');
+                
+                // Jeśli link prowadzi do innej zakładki (pliku .html)
+                if(target && target.includes('.html')) {
+                    e.preventDefault(); // Zatrzymujemy natychmiastowy przeskok
+                    
+                    // Odpalamy animację wyjścia
+                    document.body.classList.add('page-exit');
+                    
+                    // Czekamy 300 milisekund i dopiero wtedy zmieniamy stronę
+                    setTimeout(() => {
+                        window.location.href = target;
+                    }, 300);
+                }
+            });
+        });
     </script>
 </body>
 </html>
