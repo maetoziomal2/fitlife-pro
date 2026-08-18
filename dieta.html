@@ -5,142 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitPlan - Plan Diety</title>
     
+    <!-- Biblioteka Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        :root {
-            --bg-color: #050505;
-            --card-bg: #121212;
-            --card-border: #222222;
-            --text-main: #ffffff;
-            --text-muted: #888888;
-            --accent-color: #d4a373;
-            --accent-hover: #b0865c;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-
-        /* === NAWIGACJA GÓRNA === */
+        :root { --bg-color: #050505; --card-bg: #121212; --card-border: #222222; --text-main: #ffffff; --text-muted: #888888; --accent-color: #d4a373; --accent-hover: #b0865c; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; }
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 30px 0; flex-wrap: wrap; gap: 15px; }
         .logo { color: var(--accent-color); font-size: 22px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
         header nav { display: flex; gap: 20px; font-size: 13px; font-weight: bold; letter-spacing: 1px; }
         header nav a { color: var(--text-muted); text-decoration: none; text-transform: uppercase; }
         header nav a:hover { color: var(--text-main); }
         header nav a.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 5px; }
-
-        /* === NAWIGACJA MOBILNA === */
+        .gear-icon { color: var(--text-muted); font-size: 20px; text-decoration: none; transition: 0.3s; }
+        .gear-icon:hover { color: var(--text-main); }
         .mobile-nav { display: none; background-color: var(--bg-color); border-top: 1px solid var(--card-border); position: fixed; bottom: 0; left: 0; width: 100%; justify-content: space-around; padding: 10px 0; z-index: 1000; }
         .mobile-nav a { color: var(--text-muted); text-decoration: none; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; text-transform: uppercase; }
         .mobile-nav a.active { color: var(--accent-color); }
         .mobile-nav .icon { font-size: 20px; }
-
-        /* === WIDOK DIETY === */
-        .diet-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
-            padding: 15px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .date-selector {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-weight: bold;
-        }
-
-        .date-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 18px;
-            cursor: pointer;
-        }
         
+        .diet-header { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); border: 1px solid var(--card-border); padding: 15px 20px; border-radius: 12px; margin-bottom: 20px; }
+        .date-selector { display: flex; align-items: center; gap: 15px; font-weight: bold; }
+        .date-btn { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; }
         .date-btn:hover { color: var(--accent-color); }
+        
+        .meal-card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; margin-bottom: 15px; }
+        .meal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 15px; margin-bottom: 15px; }
+        .meal-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold; }
+        .meal-stats { display: flex; gap: 15px; font-size: 12px; color: var(--text-muted); }
+        .meal-stats span { display: flex; flex-direction: column; align-items: flex-end; }
+        .meal-stats strong { color: var(--text-main); font-size: 14px; }
+        
+        .add-product-btn { background-color: transparent; color: var(--accent-color); border: 1px dashed var(--accent-color); padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; transition: 0.3s; }
+        .add-product-btn:hover { background-color: rgba(212, 163, 115, 0.1); }
 
-        .meal-card {
+        /* === STYLE DLA OKIENKA (MODALA) === */
+        .modal-overlay {
+            display: none; /* Domyślnie ukryte */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
             background-color: var(--card-bg);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--accent-color);
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
         }
+        .modal-content h3 { margin-top: 0; color: var(--accent-color); }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .modal-grid input { background-color: var(--bg-color); border: 1px solid var(--card-border); color: white; padding: 10px; border-radius: 6px; width: 90%; }
+        .modal-buttons { display: flex; gap: 10px; }
+        .btn-save { background-color: var(--accent-color); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; }
+        .btn-cancel { background-color: transparent; color: white; border: 1px solid var(--text-muted); padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; }
 
-        .meal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #222;
-            padding-bottom: 15px;
-            margin-bottom: 15px;
-        }
-
-        .meal-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .meal-stats {
-            display: flex;
-            gap: 15px;
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .meal-stats span {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-        }
-
-        .meal-stats strong {
-            color: var(--text-main);
-            font-size: 14px;
-        }
-
-        .add-product-btn {
-            background-color: transparent;
-            color: var(--accent-color);
-            border: 1px dashed var(--accent-color);
-            padding: 10px;
-            border-radius: 8px;
-            width: 100%;
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 12px;
-            transition: 0.3s;
-        }
-
-        .add-product-btn:hover {
-            background-color: rgba(212, 163, 115, 0.1);
-        }
-
-        /* === MEDIA QUERIES === */
-        @media (max-width: 900px) {
-            body { padding-bottom: 80px; }
-            header nav { display: none; }
-            .mobile-nav { display: flex; }
-            .meal-header { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .meal-stats { width: 100%; justify-content: space-between; }
-        }
+        @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } .meal-header { flex-direction: column; align-items: flex-start; gap: 15px; } .meal-stats { width: 100%; justify-content: space-between; } }
     </style>
 </head>
 <body>
 
-    <!-- GÓRNA NAWIGACJA -->
     <header>
         <div class="logo"><span>||=</span> FITPLAN</div>
         <nav>
@@ -150,12 +76,11 @@
             <a href="postepy.html">POSTĘPY</a>
             <a href="kalkulator.html">KALKULATOR</a>
         </nav>
-        <a href="ustawienia.html" style="text-decoration: none; color: var(--text-muted); font-size: 20px; transition: 0.3s;">⚙</a>
+        <a href="ustawienia.html" class="gear-icon">⚙</a>
     </header>
 
     <main style="max-width: 800px; margin: 0 auto;">
         
-        <!-- WYBÓR DATY -->
         <div class="diet-header">
             <div style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Podsumowanie dnia</div>
             <div class="date-selector">
@@ -163,82 +88,80 @@
                 <span>Dzisiaj</span>
                 <button class="date-btn">&gt;</button>
             </div>
-            <div style="font-weight: bold; color: var(--accent-color);">0 / 2500 kcal</div>
+            <!-- Tutaj wstawimy zjedzone kalorie / cel -->
+            <div style="font-weight: bold; color: var(--accent-color);" id="top-kcal-summary">0 / 0 kcal</div>
         </div>
 
-        <!-- POSIŁEK 1 -->
         <div class="meal-card">
             <div class="meal-header">
                 <div class="meal-title"><span>🍳</span> Śniadanie</div>
-                <div class="meal-stats">
-                    <span><strong>0</strong> kcal</span>
-                    <span><strong>0g</strong> białko</span>
-                    <span><strong>0g</strong> tłuszcze</span>
-                    <span><strong>0g</strong> węgle</span>
-                </div>
             </div>
-            <button class="add-product-btn">+ Dodaj produkt</button>
+            <!-- Kliknięcie otwiera okienko z nazwą posiłku -->
+            <button class="add-product-btn" onclick="openModal('Śniadanie')">+ Dodaj produkt</button>
         </div>
 
-        <!-- POSIŁEK 2 -->
         <div class="meal-card">
             <div class="meal-header">
                 <div class="meal-title"><span>🥪</span> II Śniadanie</div>
-                <div class="meal-stats">
-                    <span><strong>0</strong> kcal</span>
-                    <span><strong>0g</strong> białko</span>
-                    <span><strong>0g</strong> tłuszcze</span>
-                    <span><strong>0g</strong> węgle</span>
-                </div>
             </div>
-            <button class="add-product-btn">+ Dodaj produkt</button>
+            <button class="add-product-btn" onclick="openModal('II Śniadanie')">+ Dodaj produkt</button>
         </div>
 
-        <!-- POSIŁEK 3 -->
         <div class="meal-card">
             <div class="meal-header">
                 <div class="meal-title"><span>🥩</span> Obiad</div>
-                <div class="meal-stats">
-                    <span><strong>0</strong> kcal</span>
-                    <span><strong>0g</strong> białko</span>
-                    <span><strong>0g</strong> tłuszcze</span>
-                    <span><strong>0g</strong> węgle</span>
-                </div>
             </div>
-            <button class="add-product-btn">+ Dodaj produkt</button>
+            <button class="add-product-btn" onclick="openModal('Obiad')">+ Dodaj produkt</button>
         </div>
 
-        <!-- POSIŁEK 4 -->
         <div class="meal-card">
             <div class="meal-header">
                 <div class="meal-title"><span>🥑</span> Podwieczorek</div>
-                <div class="meal-stats">
-                    <span><strong>0</strong> kcal</span>
-                    <span><strong>0g</strong> białko</span>
-                    <span><strong>0g</strong> tłuszcze</span>
-                    <span><strong>0g</strong> węgle</span>
-                </div>
             </div>
-            <button class="add-product-btn">+ Dodaj produkt</button>
+            <button class="add-product-btn" onclick="openModal('Podwieczorek')">+ Dodaj produkt</button>
         </div>
 
-        <!-- POSIŁEK 5 -->
         <div class="meal-card">
             <div class="meal-header">
                 <div class="meal-title"><span>🥗</span> Kolacja</div>
-                <div class="meal-stats">
-                    <span><strong>0</strong> kcal</span>
-                    <span><strong>0g</strong> białko</span>
-                    <span><strong>0g</strong> tłuszcze</span>
-                    <span><strong>0g</strong> węgle</span>
-                </div>
             </div>
-            <button class="add-product-btn">+ Dodaj produkt</button>
+            <button class="add-product-btn" onclick="openModal('Kolacja')">+ Dodaj produkt</button>
         </div>
 
     </main>
 
-    <!-- DOLNA NAWIGACJA -->
+    <!-- UKRYTE OKIENKO (MODAL) DO DODAWANIA PRODUKTÓW -->
+    <div class="modal-overlay" id="add-modal">
+        <div class="modal-content">
+            <h3 id="modal-title">Dodaj do: ...</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Wpisz wartości odżywcze produktu/posiłku.</p>
+            
+            <div class="modal-grid">
+                <div>
+                    <label style="font-size: 11px; color: var(--accent-color);">Kalorie (kcal)</label>
+                    <input type="number" id="add-kcal" placeholder="np. 350">
+                </div>
+                <div>
+                    <label style="font-size: 11px; color: #4da6ff;">Białko (g)</label>
+                    <input type="number" id="add-protein" placeholder="np. 30">
+                </div>
+                <div>
+                    <label style="font-size: 11px; color: #ffcc00;">Tłuszcze (g)</label>
+                    <input type="number" id="add-fats" placeholder="np. 15">
+                </div>
+                <div>
+                    <label style="font-size: 11px; color: #66cc66;">Węgle (g)</label>
+                    <input type="number" id="add-carbs" placeholder="np. 40">
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">Anuluj</button>
+                <button class="btn-save" onclick="saveFoodToDatabase()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+
     <nav class="mobile-nav">
         <a href="index.html"><span class="icon">🏠</span><span>Pulpit</span></a>
         <a href="dieta.html" class="active"><span class="icon">🍴</span><span>Dieta</span></a>
@@ -247,5 +170,72 @@
         <a href="kalkulator.html"><span class="icon">🧮</span><span>Kalkulator</span></a>
     </nav>
 
+    <script>
+        const supabaseUrl = 'https://ttgeuikoyfcgiboajhcf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Zmienna przechowująca to, co obecnie jest już w bazie, żebyśmy mogli do tego dodawać
+        let currentDailyStats = {};
+
+        // 1. POBIERANIE DANYCH (Wyświetlanie sumy u góry)
+        async function loadDietSummary() {
+            let { data: daily } = await supabaseClient.from('daily_stats').select('*').limit(1).single();
+            let { data: goals } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
+            
+            if (daily) currentDailyStats = daily;
+            if (!goals) goals = { target_kcal: 2500 };
+
+            document.getElementById('top-kcal-summary').innerText = `${currentDailyStats.calories_consumed || 0} / ${goals.target_kcal} kcal`;
+        }
+        loadDietSummary();
+
+        // 2. FUNKCJE OKIENKA (MODALA)
+        function openModal(mealName) {
+            document.getElementById('modal-title').innerText = "Dodaj do: " + mealName;
+            
+            // Czyszczenie okienek po poprzednim dodawaniu
+            document.getElementById('add-kcal').value = '';
+            document.getElementById('add-protein').value = '';
+            document.getElementById('add-fats').value = '';
+            document.getElementById('add-carbs').value = '';
+            
+            document.getElementById('add-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('add-modal').style.display = 'none';
+        }
+
+        // 3. DODAWANIE JEDZENIA DO BAZY
+        async function saveFoodToDatabase() {
+            // Pobieramy wpisane wartości (jeśli puste, traktujemy jako 0)
+            const inputKcal = parseInt(document.getElementById('add-kcal').value) || 0;
+            const inputProtein = parseInt(document.getElementById('add-protein').value) || 0;
+            const inputFats = parseInt(document.getElementById('add-fats').value) || 0;
+            const inputCarbs = parseInt(document.getElementById('add-carbs').value) || 0;
+
+            // Dodajemy nowe wartości do starych wartości (wyciągniętych wcześniej z bazy)
+            const updates = {
+                id: currentDailyStats.id || 1, // Zakładamy, że pracujemy na wierszu nr 1
+                calories_consumed: (currentDailyStats.calories_consumed || 0) + inputKcal,
+                protein_consumed: (currentDailyStats.protein_consumed || 0) + inputProtein,
+                fats_consumed: (currentDailyStats.fats_consumed || 0) + inputFats,
+                carbs_consumed: (currentDailyStats.carbs_consumed || 0) + inputCarbs
+            };
+
+            // Zapisujemy nowe sumy do Supabase
+            const { error } = await supabaseClient.from('daily_stats').upsert(updates);
+
+            if (!error) {
+                closeModal(); // Zamykamy okienko
+                loadDietSummary(); // Odświeżamy wynik u góry strony
+                alert("Dodano pomyślnie! Zobacz zmiany na Pulpicie.");
+            } else {
+                console.error(error);
+                alert("Wystąpił błąd przy zapisie.");
+            }
+        }
+    </script>
 </body>
 </html>
