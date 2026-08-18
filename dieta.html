@@ -101,9 +101,9 @@
         <div class="diet-header">
             <div style="color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Podsumowanie dnia</div>
             <div class="date-selector">
-                <button class="date-btn">&lt;</button>
-                <span>Dzisiaj</span>
-                <button class="date-btn">&gt;</button>
+                <button class="date-btn" onclick="changeDate(-1)">&lt;</button>
+                <span id="date-display">Dzisiaj</span>
+                <button class="date-btn" onclick="changeDate(1)">&gt;</button>
             </div>
             <div style="font-weight: bold; color: var(--accent-color);" id="top-kcal-summary">0 / 0 kcal</div>
         </div>
@@ -225,48 +225,70 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let currentDailyStats = {};
+                let currentDailyStats = {};
         let activeMealCategory = ""; 
         let userSavedMeals = []; 
         let html5QrcodeScanner = null;
-        let baseMacros = null; // Przechowuje wartości pobrane ze skanera dla 100g
+        let baseMacros = null;
+
+        // NOWE: Zmienna trzymająca wybraną datę
+        let currentDateDisplay = new Date(); 
+        currentDateDisplay.setHours(0,0,0,0);
+
+        // Funkcja do zmieniania dni (wywoływana przez strzałki)
+        function changeDate(days) {
+            currentDateDisplay.setDate(currentDateDisplay.getDate() + days);
+            loadDietData();
+        }
 
         async function loadDietData() {
+            // Zmiana napisów Dzisiaj / Wczoraj / Jutro / konkretna data
+            const today = new Date(); today.setHours(0,0,0,0);
+            const diffTime = currentDateDisplay.getTime() - today.getTime();
+            const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+            
+            let dateLabel = "Dzisiaj";
+            if (diffDays === -1) dateLabel = "Wczoraj";
+            else if (diffDays === 1) dateLabel = "Jutro";
+            else if (diffDays !== 0) dateLabel = currentDateDisplay.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+            
+            document.getElementById('date-display').innerText = dateLabel;
+
+            // Pobieranie celów 
             let { data: daily } = await supabaseClient.from('daily_stats').select('*').limit(1).single();
             let { data: goals } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
-            
-            const d = new Date();
-            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            if (daily && daily.last_updated !== today) {
-                const resetData = { calories_consumed: 0, protein_consumed: 0, fats_consumed: 0, carbs_consumed: 0, water_consumed: 0, last_updated: today };
-                await supabaseClient.from('daily_stats').update(resetData).eq('id', daily.id);
-                daily = { ...daily, ...resetData };
-            }
-
             if (daily) currentDailyStats = daily;
             if (!goals) goals = { target_kcal: 2500 };
-            document.getElementById('top-kcal-summary').innerText = `${currentDailyStats.calories_consumed || 0} / ${goals.target_kcal} kcal`;
 
             const { data: savedMealsData } = await supabaseClient.from('saved_meals').select('*');
             if (savedMealsData) userSavedMeals = savedMealsData;
 
-            const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0); 
-            const isoStart = startOfDay.toISOString();
+            // SZUKANIE W BAZIE DLA WYBRANEJ DATY (od północy do 23:59)
+            const startOfDay = new Date(currentDateDisplay); startOfDay.setHours(0, 0, 0, 0); 
+            const endOfDay = new Date(currentDateDisplay); endOfDay.setHours(23, 59, 59, 999); 
 
-            const { data: foodLogs } = await supabaseClient.from('food_log').select('*').gte('created_at', isoStart);
+            const { data: foodLogs } = await supabaseClient.from('food_log')
+                .select('*')
+                .gte('created_at', startOfDay.toISOString())
+                .lte('created_at', endOfDay.toISOString());
             
-            const categories = ['Śniadanie', 'II-Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja'];
+            // Czyszczenie list posiłków
+            const categories = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja'];
             categories.forEach(cat => {
-                const el = document.getElementById(`list-${cat}`);
+                const el = document.getElementById(`list-${cat.replace(' ', '-')}`);
                 if(el) el.innerHTML = ''; 
             });
 
+            let dayKcal = 0; // Dynamiczny licznik kcal dla tego dnia
+
             if (foodLogs) {
                 foodLogs.forEach(food => {
+                    dayKcal += (food.kcal || 0);
+                    
                     let safeId = `list-${food.meal_category.replace(' ', '-')}`;
                     const listContainer = document.getElementById(safeId);
                     if (listContainer) {
-                                                const html = `
+                        const html = `
                         <div class="food-item">
                             <div>
                                 <div class="food-name">${food.food_name || 'Brak nazwy'}</div>
@@ -285,121 +307,67 @@
                     }
                 });
             }
+            
+            // Pokazanie zsumowanych kcal z tego dnia na samej górze
+            document.getElementById('top-kcal-summary').innerText = `${dayKcal} / ${goals.target_kcal} kcal`;
         }
+        
         loadDietData();
 
-        // ====== OBSŁUGA SKANERA ======
+        // ====== SKANER I INNE FUNKCJE (bez zmian) ======
         function startScanner() {
             document.getElementById('qr-reader').style.display = 'block';
             document.getElementById('scan-btn').style.display = 'none';
-            
-            if (!html5QrcodeScanner) {
-                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
-            }
+            if (!html5QrcodeScanner) html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
             html5QrcodeScanner.render(onScanSuccess);
         }
 
-        async function onScanSuccess(decodedText, decodedResult) {
-            html5QrcodeScanner.clear(); // Wyłącza aparat
-            document.getElementById('qr-reader').style.display = 'none';
-            document.getElementById('scan-btn').style.display = 'block';
-            document.getElementById('scan-btn').innerText = "⏳ Pobieranie z bazy...";
-            
+        async function onScanSuccess(decodedText) {
+            html5QrcodeScanner.clear(); document.getElementById('qr-reader').style.display = 'none'; document.getElementById('scan-btn').style.display = 'block'; document.getElementById('scan-btn').innerText = "⏳ Pobieranie...";
             try {
                 const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`);
                 const data = await res.json();
-                
                 if(data.status === 1 && data.product) {
-                    const p = data.product;
-                    const nut = p.nutriments;
-                    
-                    document.getElementById('add-name').value = p.product_name || "Zeskanowany produkt";
-                    
-                    // Zapisujemy wartości dla 100g (jako baza)
-                    baseMacros = {
-                        kcal: nut['energy-kcal_100g'] || 0,
-                        protein: nut.proteins_100g || 0,
-                        fats: nut.fat_100g || 0,
-                        carbs: nut.carbohydrates_100g || 0
-                    };
-                    
-                    document.getElementById('add-weight').value = 100;
-                    scaleMacros(); // Wylicza wartości i wstawia do okienek
-                    
-                    document.getElementById('scan-btn').innerText = "✅ Znaleziono! Kliknij by skanować kolejny";
-                } else {
-                    alert("Produktu nie ma jeszcze w otwartej bazie.");
-                    document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner Kodów";
-                }
-            } catch (e) {
-                alert("Błąd połączenia z bazą kodów.");
-                document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner Kodów";
-            }
+                    const nut = data.product.nutriments;
+                    document.getElementById('add-name').value = data.product.product_name || "Zeskanowany produkt";
+                    baseMacros = { kcal: nut['energy-kcal_100g'] || 0, protein: nut.proteins_100g || 0, fats: nut.fat_100g || 0, carbs: nut.carbohydrates_100g || 0 };
+                    document.getElementById('add-weight').value = 100; scaleMacros();
+                    document.getElementById('scan-btn').innerText = "✅ Znaleziono!";
+                } else { alert("Brak w bazie."); document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner"; }
+            } catch (e) { alert("Błąd połączenia."); document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner"; }
         }
 
-        // ====== PRZELICZANIE GRAMATURY ======
         function scaleMacros() {
-            if(!baseMacros) return; // Przeliczamy tylko jak użyto skanera
-            
-            const weight = parseFloat(document.getElementById('add-weight').value) || 0;
-            const ratio = weight / 100;
-            
-            document.getElementById('add-kcal').value = Math.round(baseMacros.kcal * ratio);
-            document.getElementById('add-protein').value = Math.round(baseMacros.protein * ratio);
-            document.getElementById('add-fats').value = Math.round(baseMacros.fats * ratio);
-            document.getElementById('add-carbs').value = Math.round(baseMacros.carbs * ratio);
+            if(!baseMacros) return;
+            const ratio = (parseFloat(document.getElementById('add-weight').value) || 0) / 100;
+            document.getElementById('add-kcal').value = Math.round(baseMacros.kcal * ratio); document.getElementById('add-protein').value = Math.round(baseMacros.protein * ratio);
+            document.getElementById('add-fats').value = Math.round(baseMacros.fats * ratio); document.getElementById('add-carbs').value = Math.round(baseMacros.carbs * ratio);
         }
 
         function openModal(mealName) {
-            activeMealCategory = mealName;
-            document.getElementById('modal-title').innerText = "Dodaj do: " + mealName;
-            
-            // Czyszczenie
-            baseMacros = null; 
-            document.getElementById('add-name').value = '';
-            document.getElementById('add-weight').value = 100;
-            document.getElementById('add-kcal').value = '';
-            document.getElementById('add-protein').value = '';
-            document.getElementById('add-fats').value = '';
-            document.getElementById('add-carbs').value = '';
-            document.getElementById('save-favorite').checked = false;
-            document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner Kodów";
-            if (html5QrcodeScanner) html5QrcodeScanner.clear();
-            document.getElementById('qr-reader').style.display = 'none';
-            document.getElementById('scan-btn').style.display = 'block';
+            activeMealCategory = mealName; document.getElementById('modal-title').innerText = "Dodaj do: " + mealName;
+            baseMacros = null; document.getElementById('add-name').value = ''; document.getElementById('add-weight').value = 100;
+            ['kcal', 'protein', 'fats', 'carbs'].forEach(id => document.getElementById(`add-${id}`).value = '');
+            document.getElementById('save-favorite').checked = false; document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner Kodów";
+            if (html5QrcodeScanner) html5QrcodeScanner.clear(); document.getElementById('qr-reader').style.display = 'none'; document.getElementById('scan-btn').style.display = 'block';
             
             const selectBox = document.getElementById('saved-meals-select');
             selectBox.innerHTML = '<option value="">-- Wybierz lub wpisz poniżej --</option>'; 
-            const filteredMeals = userSavedMeals.filter(m => m.meal_category === mealName);
-            filteredMeals.forEach(meal => { selectBox.innerHTML += `<option value="${meal.id}">${meal.food_name} (${meal.kcal} kcal)</option>`; });
-            
+            userSavedMeals.filter(m => m.meal_category === mealName).forEach(meal => selectBox.innerHTML += `<option value="${meal.id}">${meal.food_name} (${meal.kcal} kcal)</option>`);
             document.getElementById('add-modal').style.display = 'flex';
         }
 
-        function closeModal() { 
-            if (html5QrcodeScanner) html5QrcodeScanner.clear();
-            document.getElementById('add-modal').style.display = 'none'; 
-        }
+        function closeModal() { if(html5QrcodeScanner) html5QrcodeScanner.clear(); document.getElementById('add-modal').style.display = 'none'; }
 
         function fillFromSaved() {
             const selectedId = document.getElementById('saved-meals-select').value;
-            baseMacros = null; // Resetujemy bazę, bo wczytujemy gotowy posiłek
-            document.getElementById('add-weight').value = 100; // Porcja wczytana z bazy traktowana jest jako cała (100%)
-            
-            if (!selectedId) {
-                document.getElementById('add-name').value = ''; document.getElementById('add-kcal').value = ''; document.getElementById('add-protein').value = ''; document.getElementById('add-fats').value = ''; document.getElementById('add-carbs').value = '';
-                return;
-            }
+            baseMacros = null; document.getElementById('add-weight').value = 100;
+            if (!selectedId) return ['name', 'kcal', 'protein', 'fats', 'carbs'].forEach(id => document.getElementById(`add-${id}`).value = '');
             const mealToFill = userSavedMeals.find(m => m.id == selectedId);
-            if (mealToFill) {
-                document.getElementById('add-name').value = mealToFill.food_name;
-                document.getElementById('add-kcal').value = mealToFill.kcal;
-                document.getElementById('add-protein').value = mealToFill.protein;
-                document.getElementById('add-fats').value = mealToFill.fats;
-                document.getElementById('add-carbs').value = mealToFill.carbs;
-            }
+            if (mealToFill) { document.getElementById('add-name').value = mealToFill.food_name; document.getElementById('add-kcal').value = mealToFill.kcal; document.getElementById('add-protein').value = mealToFill.protein; document.getElementById('add-fats').value = mealToFill.fats; document.getElementById('add-carbs').value = mealToFill.carbs; }
         }
 
+        // ====== DODAWANIE DO BAZY (DLA WYBRANEGO DNIA!) ======
         async function saveFoodToDatabase() {
             const inputName = document.getElementById('add-name').value || "Produkt ze skanera";
             const inputKcal = parseInt(document.getElementById('add-kcal').value) || 0;
@@ -408,48 +376,49 @@
             const inputCarbs = parseInt(document.getElementById('add-carbs').value) || 0;
             const isFavorite = document.getElementById('save-favorite').checked;
 
-            const { error: logError } = await supabaseClient.from('food_log').insert([{ meal_category: activeMealCategory, food_name: inputName, kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs }]);
+            // Przypinamy produkt do dnia wybranego przez strzałki (np. wczoraj)
+            const insertDate = new Date(currentDateDisplay);
+            insertDate.setHours(12, 0, 0); 
+
+            const { error: logError } = await supabaseClient.from('food_log').insert([{ 
+                meal_category: activeMealCategory, food_name: inputName, 
+                kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs,
+                created_at: insertDate.toISOString() 
+            }]);
+            
             if (logError) return alert("Wystąpił błąd przy dodawaniu produktu.");
+            if (isFavorite) await supabaseClient.from('saved_meals').insert([{ meal_category: activeMealCategory, food_name: inputName, kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs }]);
 
-            if (isFavorite) {
-                await supabaseClient.from('saved_meals').insert([{ meal_category: activeMealCategory, food_name: inputName, kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs }]);
+            // Odśwież główny pulpit TYLKO jeśli dodajemy na DZISIAJ
+            const today = new Date(); today.setHours(0,0,0,0);
+            if (currentDateDisplay.getTime() === today.getTime()) {
+                const updates = {
+                    calories_consumed: (currentDailyStats.calories_consumed || 0) + inputKcal, protein_consumed: (currentDailyStats.protein_consumed || 0) + inputProtein,
+                    fats_consumed: (currentDailyStats.fats_consumed || 0) + inputFats, carbs_consumed: (currentDailyStats.carbs_consumed || 0) + inputCarbs
+                };
+                await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
             }
-
-            const updates = {
-                calories_consumed: (currentDailyStats.calories_consumed || 0) + inputKcal, protein_consumed: (currentDailyStats.protein_consumed || 0) + inputProtein, fats_consumed: (currentDailyStats.fats_consumed || 0) + inputFats, carbs_consumed: (currentDailyStats.carbs_consumed || 0) + inputCarbs
-            };
-
-            await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
             
             closeModal(); loadDietData(); 
         }
-        
-                // ====== USUWANIE PRODUKTU ======
+
+        // ====== USUWANIE (Z WYBRANEGO DNIA!) ======
         async function deleteFood(foodId, kcal, protein, fats, carbs) {
-            // Pytamy o potwierdzenie (żeby uniknąć przypadkowych kliknięć)
             if (!confirm("Na pewno chcesz usunąć ten produkt z posiłku?")) return;
 
-            // 1. Usuwamy wpis z historii jedzenia
             const { error: deleteError } = await supabaseClient.from('food_log').delete().eq('id', foodId);
-            
-            if (deleteError) {
-                alert("Wystąpił błąd podczas usuwania.");
-                return;
+            if (deleteError) return alert("Wystąpił błąd podczas usuwania.");
+
+            const today = new Date(); today.setHours(0,0,0,0);
+            if (currentDateDisplay.getTime() === today.getTime()) {
+                const updates = {
+                    calories_consumed: Math.max(0, (currentDailyStats.calories_consumed || 0) - kcal), protein_consumed: Math.max(0, (currentDailyStats.protein_consumed || 0) - protein),
+                    fats_consumed: Math.max(0, (currentDailyStats.fats_consumed || 0) - fats), carbs_consumed: Math.max(0, (currentDailyStats.carbs_consumed || 0) - carbs)
+                };
+                await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
             }
-
-            // 2. Odejmujemy makro od dzisiejszych statystyk (zabezpieczenie Math.max przed ujemnymi wartościami)
-            const updates = {
-                calories_consumed: Math.max(0, (currentDailyStats.calories_consumed || 0) - kcal),
-                protein_consumed: Math.max(0, (currentDailyStats.protein_consumed || 0) - protein),
-                fats_consumed: Math.max(0, (currentDailyStats.fats_consumed || 0) - fats),
-                carbs_consumed: Math.max(0, (currentDailyStats.carbs_consumed || 0) - carbs)
-            };
-
-            await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
-
-            // 3. Odświeżamy listę, żeby produkt zniknął z ekranu
             loadDietData(); 
         }
-    </script>
+</script>
 </body>
 </html>
