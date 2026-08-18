@@ -23,16 +23,16 @@
             color: var(--text-main);
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 20px; /* Zmniejszyłem padding dla lepszego wyglądu na telefonie */
+            padding: 20px;
         }
 
-        /* === NAWIGACJA (HEADER) === */
+        /* === NAWIGACJA === */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 0 30px 0;
-            flex-wrap: wrap; /* Pozwala elementom zawijać się na małych ekranach */
+            flex-wrap: wrap;
             gap: 15px;
         }
 
@@ -52,28 +52,24 @@
             font-size: 13px;
             font-weight: bold;
             letter-spacing: 1px;
-            overflow-x: auto; /* Pozwala przewijać menu palcem w poziomie na telefonie */
+            overflow-x: auto;
             white-space: nowrap;
         }
 
-        /* ZMIANA: Menu to teraz prawdziwe linki */
         nav a {
             color: var(--text-muted);
-            text-decoration: none; /* Usuwa podkreślenie linku */
+            text-decoration: none;
             text-transform: uppercase;
         }
 
-        nav a:hover {
-            color: var(--text-main);
-        }
-
+        nav a:hover { color: var(--text-main); }
         nav a.active {
             color: var(--accent-color);
             border-bottom: 2px solid var(--accent-color);
             padding-bottom: 5px;
         }
 
-        /* === GŁÓWNY UKŁAD === */
+        /* === GÓRNA SEKCJA === */
         .top-section {
             display: grid;
             grid-template-columns: 1fr 2.5fr; 
@@ -90,21 +86,9 @@
             justify-content: center;
         }
 
-        .welcome-card {
-            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
-        }
-
-        .welcome-card h2 {
-            font-size: 32px;
-            margin: 10px 0;
-            line-height: 1.1;
-        }
-
-        .welcome-card p {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 25px;
-        }
+        .welcome-card { background: linear-gradient(145deg, #1a1a1a, #0a0a0a); }
+        .welcome-card h2 { font-size: 32px; margin: 10px 0; line-height: 1.1; }
+        .welcome-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
 
         .btn {
             background-color: var(--accent-color);
@@ -118,82 +102,93 @@
             text-transform: uppercase;
             font-size: 12px;
         }
-
-        .btn:hover {
-            background-color: var(--accent-hover);
+        .btn:hover { background-color: var(--accent-hover); }
+        
+        .btn-outline {
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
         }
+        .btn-outline:hover { background: var(--accent-color); color: #000; }
 
-        .stats-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .stats-row-4 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-
-        .stats-row-2 {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
+        .stats-container { display: flex; flex-direction: column; gap: 20px; }
+        .stats-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .stats-row-1 { display: grid; grid-template-columns: 1fr; gap: 20px; } /* Zmieniono pod jeden kafelek (Wodę) */
 
         .stat-header {
+            display: flex; align-items: center; gap: 10px; font-size: 11px;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+        }
+        .stat-icon { color: var(--accent-color); font-size: 16px; }
+        .value { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        .sub-text { color: var(--text-muted); font-size: 11px; }
+
+        /* === DOLNA SEKCJA (NOWA) === */
+        .bottom-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
-        .stat-icon {
-            color: var(--accent-color);
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+        .list-item:last-child { border-bottom: none; }
+
+        .item-info { display: flex; align-items: center; gap: 15px; }
+        .item-icon { color: var(--accent-color); font-size: 18px; }
+        .item-text h4 { margin: 0; font-size: 13px; font-weight: normal; }
+        .item-text p { margin: 4px 0 0 0; font-size: 11px; color: var(--text-muted); }
+
+        .add-btn {
+            background: none;
+            border: 1px solid var(--text-muted);
+            color: var(--text-muted);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
             font-size: 16px;
         }
+        .add-btn:hover { border-color: var(--text-main); color: var(--text-main); }
 
-        .value {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .sub-text {
-            color: var(--text-muted);
-            font-size: 11px;
-        }
-
-        /* === DOSTOSOWANIE DO TELEFONÓW (MEDIA QUERIES) === */
+        /* === MEDIA QUERIES (TELEFON) === */
         @media (max-width: 900px) {
-            .top-section {
-                grid-template-columns: 1fr; /* Na telefonie lewa i prawa strona są pod sobą */
-            }
-            
-            .stats-row-4 {
-                grid-template-columns: repeat(2, 1fr); /* Dokładnie jak na Twoim zdjęciu z telefonu: 2x2 kafelki */
-            }
-
-            .stats-row-2 {
-                grid-template-columns: 1fr; /* Woda i kroki jedno pod drugim */
-            }
-            
-            .welcome-card h2 {
-                font-size: 26px; /* Mniejszy tekst na telefonie */
-            }
+            .top-section { grid-template-columns: 1fr; }
+            .stats-row-4 { grid-template-columns: repeat(2, 1fr); }
+            .welcome-card h2 { font-size: 26px; }
+            .bottom-section { grid-template-columns: 1fr; } /* Kolumny pod sobą na telefonie */
         }
     </style>
 </head>
 <body>
 
-    <!-- PASEK NAWIGACJI -->
     <header>
         <div class="logo"><span>||=</span> FITPLAN</div>
-        <!-- Zmieniliśmy <span> na <a> i dodaliśmy linki href -->
         <nav>
             <a href="index.html" class="active">PULPIT</a>
             <a href="dieta.html">DIETA</a>
@@ -204,10 +199,8 @@
         <div style="color: var(--text-muted); font-size: 20px;">⚙</div>
     </header>
 
-    <!-- GŁÓWNA SEKCJA -->
+    <!-- GÓRNA SEKCJA -->
     <main class="top-section">
-        
-        <!-- LEWA STRONA: BANER POWITALNY -->
         <div class="card welcome-card">
             <div style="font-size: 12px; color: var(--text-muted); letter-spacing: 1px;">WITAJ!</div>
             <h2>TWÓJ PLAN.<br>TWOJE CELE.<br><span style="color: var(--accent-color);">TWOJE WYNIKI.</span></h2>
@@ -215,9 +208,7 @@
             <button class="btn">USTAW SWOJE CELE</button>
         </div>
 
-        <!-- PRAWA STRONA: STATYSTYKI -->
         <div class="stats-container">
-            
             <div class="stats-row-4">
                 <div class="card">
                     <div class="stat-header"><span class="stat-icon">🔥</span> KALORIE</div>
@@ -241,7 +232,8 @@
                 </div>
             </div>
 
-            <div class="stats-row-2">
+            <!-- Usunięto kroki, woda zajmuje teraz cały wiersz -->
+            <div class="stats-row-1">
                 <div class="card">
                     <div class="stat-header"><span class="stat-icon" style="color: #4da6ff;">💧</span> WODA</div>
                     <div class="value" id="water-value">-- L / 2.5 L</div>
@@ -250,19 +242,109 @@
                         <div style="width: 0%; height: 100%; background-color: #4da6ff; border-radius: 2px;"></div>
                     </div>
                 </div>
-                <div class="card">
-                    <div class="stat-header"><span class="stat-icon" style="color: #66cc66;">👟</span> KROKI</div>
-                    <div class="value" id="steps-value">-- / 10000</div>
-                    <div class="sub-text">z dziennego celu</div>
-                    <div style="width: 100%; height: 4px; background-color: #333; margin-top: 10px; border-radius: 2px;">
-                        <div style="width: 0%; height: 100%; background-color: #66cc66; border-radius: 2px;"></div>
-                    </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- DOLNA SEKCJA (NOWA) -->
+    <section class="bottom-section">
+        
+        <!-- KOLUMNA 1: DIETA -->
+        <div class="card" style="justify-content: flex-start;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="section-title"><span class="stat-icon">📅</span> PLAN DIETY</div>
+                <div style="font-size: 12px; color: var(--text-muted);">&lt; Dzień 1 &gt; 📅</div>
+            </div>
+            
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="item-icon">🍳</div>
+                    <div class="item-text"><h4>Śniadanie</h4><p>Dodaj posiłek</p></div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="item-icon">🥪</div>
+                    <div class="item-text"><h4>II śniadanie</h4><p>Dodaj posiłek</p></div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="item-icon">🥩</div>
+                    <div class="item-text"><h4>Obiad</h4><p>Dodaj posiłek</p></div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="item-icon">🥑</div>
+                    <div class="item-text"><h4>Podwieczorek</h4><p>Dodaj posiłek</p></div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="list-item">
+                <div class="item-info">
+                    <div class="item-icon">🥗</div>
+                    <div class="item-text"><h4>Kolacja</h4><p>Dodaj posiłek</p></div>
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+        </div>
+
+        <!-- KOLUMNA 2: TRENING -->
+        <div class="card" style="justify-content: flex-start;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="section-title" style="margin-bottom: 0;"><span class="stat-icon">💪</span> PLAN TRENINGOWY</div>
+                <button class="btn-outline">ZOBACZ KALENDARZ</button>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">&#709; Tydzień 1 <span style="float: right;">&lt; - / - &gt;</span></div>
+
+            <div class="list-item">
+                <div class="item-info"><div class="item-text"><h4>Poniedziałek</h4><p>Dodaj trening</p></div></div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="list-item">
+                <div class="item-info"><div class="item-text"><h4>Wtorek</h4><p>Dodaj trening</p></div></div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="list-item">
+                <div class="item-info"><div class="item-text"><h4>Środa</h4><p>Dodaj trening</p></div></div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="list-item">
+                <div class="item-info"><div class="item-text"><h4>Czwartek</h4><p>Dodaj trening</p></div></div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="list-item">
+                <div class="item-info"><div class="item-text"><h4>Piątek</h4><p>Dodaj trening</p></div></div>
+                <button class="add-btn">+</button>
+            </div>
+        </div>
+
+        <!-- KOLUMNA 3: POSTĘPY I KALKULATOR -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="card" style="flex: 1; text-align: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="section-title" style="margin-bottom: 0;"><span class="stat-icon">📈</span> POSTĘPY</div>
+                    <button class="btn-outline">DODAJ POMIAR</button>
+                </div>
+                <div style="margin-top: 30px; color: var(--text-muted);">
+                    <div style="font-size: 30px; margin-bottom: 10px;">📉</div>
+                    <h4 style="margin: 0; color: var(--text-main);">Brak danych</h4>
+                    <p style="font-size: 12px;">Dodaj swój pierwszy pomiar,<br>aby zobaczyć postępy.</p>
                 </div>
             </div>
 
+            <div class="card">
+                <div class="section-title">KALKULATOR MAKRO</div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Oblicz swoje zapotrzebowanie na kalorie i makroskładniki.</p>
+                <button class="btn">PRZEJDŹ DO KALKULATORA</button>
+            </div>
         </div>
 
-    </main>
+    </section>
 
     <!-- SKRYPT SUPABASE -->
     <script>
