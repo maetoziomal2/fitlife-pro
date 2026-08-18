@@ -2,917 +2,218 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dieta & Siłownia</title>
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fit Month Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --bg: #f4f4f9;
-            --surface: #ffffff;
-            --text: #1e1e2f;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --water: #0ea5e9;
-            --sidebar-w: 260px;
-            --radius: 16px;
-            --transition: all 0.3s ease;
-        }
-
-        [data-theme="dark"] {
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --primary: #3b82f6;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg); color: var(--text); overflow-x: hidden; transition: var(--transition); }
-        
-        /* Layout */
-        #app { display: flex; height: 100vh; overflow: hidden; }
-        nav.sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.5rem 1rem; z-index: 10; }
-        nav.sidebar h1 { font-size: 1.5rem; margin-bottom: 2rem; color: var(--primary); text-align: center; }
-        nav.sidebar a { display: flex; align-items: center; gap: 1rem; padding: 1rem; color: var(--text); text-decoration: none; border-radius: var(--radius); margin-bottom: 0.5rem; transition: var(--transition); font-weight: 500; }
-        nav.sidebar a:hover, nav.sidebar a.active { background: var(--primary); color: white; }
-        main { flex: 1; overflow-y: auto; padding: 2rem; padding-bottom: 6rem; }
-        
-        /* Mobile Nav */
-        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 0.5rem; z-index: 100; justify-content: space-around; }
-        .bottom-nav a { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; color: var(--text-muted); text-decoration: none; font-size: 0.75rem; padding: 0.5rem; border-radius: 8px; }
-        .bottom-nav a.active { color: var(--primary); }
-        .bottom-nav a i { font-size: 1.25rem; }
-
-        @media (max-width: 768px) {
-            nav.sidebar { display: none; }
-            .bottom-nav { display: flex; }
-            main { padding: 1rem; padding-bottom: 5rem; }
-        }
-
-        /* Views */
-        .view { display: none; animation: fadeIn 0.3s ease; }
-        .view.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Typography & Utilities */
-        h2 { margin-bottom: 1.5rem; font-size: 1.75rem; }
-        .card { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid var(--border); }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-        
-        /* Buttons & Inputs */
-        button { cursor: pointer; border: none; outline: none; font-weight: 600; border-radius: 8px; transition: var(--transition); }
-        .btn-primary { background: var(--primary); color: white; padding: 0.75rem 1.5rem; }
-        .btn-primary:hover { background: var(--primary-hover); }
-        .btn-icon { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
-        .btn-icon:hover { background: var(--border); }
-        .btn-danger { background: var(--danger); color: white; padding: 0.5rem 1rem; }
-        
-        input, select, textarea { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-top: 0.5rem; margin-bottom: 1rem; outline: none; }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
-        label { font-weight: 500; font-size: 0.9rem; color: var(--text-muted); }
-
-        /* Progress Bars */
-        .progress-bg { background: var(--border); height: 12px; border-radius: 6px; overflow: hidden; margin-top: 0.5rem; }
-        .progress-bar { background: var(--primary); height: 100%; transition: width 0.5s ease; }
-        .progress-bar.success { background: var(--success); }
-        
-        /* Modals */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .modal-overlay.active { display: flex; }
-        .modal-content { background: var(--surface); padding: 2rem; border-radius: var(--radius); width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; position: relative; }
-        .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
-
-        /* Workout Mode */
-        #workout-mode { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--surface); z-index: 2000; display: none; flex-direction: column; padding: 2rem; overflow-y: auto; }
-        #workout-mode.active { display: flex; }
-        .set-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; background: var(--bg); padding: 1rem; border-radius: 8px; }
-        .set-row input { margin: 0; width: 80px; text-align: center; }
-
-        /* Calendar */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 1rem; }
-        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); border-radius: 8px; cursor: pointer; border: 1px solid transparent; position: relative; }
-        .calendar-day:hover { border-color: var(--primary); }
-        .calendar-day.today { font-weight: bold; color: var(--primary); border: 1px solid var(--primary); }
-        .calendar-dots { display: flex; gap: 2px; margin-top: 4px; }
-        .dot { width: 6px; height: 6px; border-radius: 50%; }
-
-        /* Lists */
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border); }
-        .list-item:last-child { border-bottom: none; }
-        
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        .flex-center { display: flex; justify-content: center; align-items: center; gap: 1rem; }
-        .text-center { text-align: center; }
-        .mt-1 { margin-top: 1rem; }
-        .mb-1 { margin-bottom: 1rem; }
-        .text-2xl { font-size: 2rem; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 text-gray-800 font-sans antialiased">
 
-    <!-- Onboarding View -->
-    <div id="onboarding" class="view" style="padding: 2rem; max-width: 600px; margin: 0 auto;">
-        <h2 class="text-center text-2xl mb-1">Skonfiguruj swoją aplikację</h2>
-        <p class="text-center text-muted mb-1">Wprowadź podstawowe dane, aby wyliczyć zapotrzebowanie.</p>
-        <div class="card">
-            <label>Imię / Pseudonim</label><input type="text" id="ob-name">
-            <div class="grid-2">
-                <div><label>Wiek</label><input type="number" id="ob-age"></div>
-                <div><label>Płeć</label><select id="ob-gender"><option value="M">Mężczyzna</option><option value="F">Kobieta</option></select></div>
-                <div><label>Wzrost (cm)</label><input type="number" id="ob-height"></div>
-                <div><label>Aktualna waga (kg)</label><input type="number" id="ob-weight"></div>
-            </div>
-            <label>Cel</label>
-            <select id="ob-goal"><option value="cut">Redukcja</option><option value="maintain">Utrzymanie</option><option value="bulk">Masa</option></select>
-            <label>Poziom aktywności</label>
-            <select id="ob-activity">
-                <option value="1.2">Brak aktywności</option>
-                <option value="1.375">Niska (1-3 treningi/tydz)</option>
-                <option value="1.55">Średnia (3-5 treningów/tydz)</option>
-                <option value="1.725">Wysoka (codziennie)</option>
-            </select>
-            <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="saveOnboarding()">Oblicz i Zapisz</button>
-        </div>
-    </div>
-
-    <!-- Main App -->
-    <div id="app" style="display: none;">
-        <nav class="sidebar">
-            <h1><i class="fa-solid fa-dumbbell"></i> D&S</h1>
-            <a href="#" class="nav-link active" data-target="dashboard"><i class="fa-solid fa-house"></i> Start</a>
-            <a href="#" class="nav-link" data-target="calendar"><i class="fa-regular fa-calendar"></i> Kalendarz</a>
-            <a href="#" class="nav-link" data-target="diet"><i class="fa-solid fa-utensils"></i> Dieta</a>
-            <a href="#" class="nav-link" data-target="workout"><i class="fa-solid fa-fire"></i> Trening</a>
-            <a href="#" class="nav-link" data-target="stats"><i class="fa-solid fa-chart-line"></i> Statystyki</a>
-            <a href="#" class="nav-link" data-target="settings"><i class="fa-solid fa-gear"></i> Ustawienia</a>
-        </nav>
-
-        <main id="main-content">
-            <!-- DASHBOARD -->
-            <div id="dashboard" class="view active">
-                <div class="flex-between mb-1">
-                    <div>
-                        <h2 id="greet-name">Dzień dobry! 👋</h2>
-                        <p class="text-muted" id="current-date-display"></p>
-                    </div>
+    <!-- Nawigacja -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="text-2xl font-bold">FitPlanner</div>
+                <div class="flex space-x-4">
+                    <button onclick="switchTab('dashboard')" class="hover:text-blue-200 font-semibold">Dashboard</button>
+                    <button onclick="switchTab('dieta')" class="hover:text-blue-200 font-semibold">Dieta</button>
+                    <button onclick="switchTab('trening')" class="hover:text-blue-200 font-semibold">Trening</button>
                 </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Główny kontener -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+
+        <!-- DASHBOARD -->
+        <section id="dashboard" class="tab-content active">
+            <h2 class="text-3xl font-bold mb-6 text-gray-700">Twój Dashboard</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 
-                <div class="grid-4 mb-1">
-                    <button class="card flex-center text-center btn-icon" style="width:100%; color:var(--primary)" onclick="openModal('modal-meal')"><i class="fa-solid fa-plus"></i> Posiłek</button>
-                    <button class="card flex-center text-center btn-icon" style="width:100%; color:var(--danger)" onclick="navTo('workout')"><i class="fa-solid fa-plus"></i> Trening</button>
-                    <button class="card flex-center text-center btn-icon" style="width:100%; color:var(--water)" onclick="addWater(250)"><i class="fa-solid fa-plus"></i> Woda</button>
-                    <button class="card flex-center text-center btn-icon" style="width:100%; color:var(--success)" onclick="openModal('modal-weight')"><i class="fa-solid fa-plus"></i> Waga</button>
+                <!-- Wykres Makro -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Makroskładniki (Dzisiaj)</h3>
+                    <canvas id="macroChart"></canvas>
                 </div>
 
-                <div class="grid-2">
-                    <div class="card">
-                        <h3>Kalorie</h3>
-                        <div class="text-2xl mt-1"><span id="dash-cals-in">0</span> / <span id="dash-cals-target">2000</span> kcal</div>
-                        <div class="progress-bg"><div class="progress-bar" id="dash-cals-bar" style="width: 0%"></div></div>
-                        <div class="grid-4 mt-1 text-center" style="font-size: 0.85rem;">
-                            <div>B: <br><b id="dash-p">0</b> / <span id="dash-p-t">0</span>g</div>
-                            <div>W: <br><b id="dash-c">0</b> / <span id="dash-c-t">0</span>g</div>
-                            <div>T: <br><b id="dash-f">0</b> / <span id="dash-f-t">0</span>g</div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>Woda</h3>
-                        <div class="text-2xl mt-1" style="color: var(--water)"><span id="dash-water">0</span> / <span id="dash-water-t">2500</span> ml</div>
-                        <div class="progress-bg"><div class="progress-bar" id="dash-water-bar" style="width: 0%; background: var(--water)"></div></div>
-                        <div class="flex-center mt-1">
-                            <button class="btn-icon" onclick="addWater(250)">+250</button>
-                            <button class="btn-icon" onclick="addWater(500)">+500</button>
-                        </div>
-                    </div>
+                <!-- Wykres Wody -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Spożycie Wody (Ostatnie 7 dni)</h3>
+                    <canvas id="waterChart"></canvas>
                 </div>
 
-                <div class="card">
-                    <div class="flex-between">
-                        <h3>Dzisiejsze posiłki</h3>
-                    </div>
-                    <div id="dash-meals-list" class="mt-1">
-                        <!-- Meals generated here -->
-                    </div>
+                <!-- Podsumowanie -->
+                <div class="bg-white p-6 rounded-lg shadow-md flex flex-col justify-center">
+                    <h3 class="text-xl font-semibold mb-4">Szybkie statystyki</h3>
+                    <ul class="space-y-4 text-lg">
+                        <li class="flex justify-between border-b pb-2"><span>Zjedzone kcal:</span> <span class="font-bold text-blue-600">1850 / 2500</span></li>
+                        <li class="flex justify-between border-b pb-2"><span>Treningi w tym m-cu:</span> <span class="font-bold text-green-600">12</span></li>
+                        <li class="flex justify-between border-b pb-2"><span>Wypita woda:</span> <span class="font-bold text-blue-400">2.5 L</span></li>
+                    </ul>
                 </div>
             </div>
+        </section>
 
-            <!-- DIET -->
-            <div id="diet" class="view">
-                <div class="flex-between mb-1">
-                    <h2>Baza Produktów i Dieta</h2>
-                    <button class="btn-primary" onclick="openModal('modal-food')">Nowy Produkt</button>
-                </div>
-                <div class="card">
-                    <input type="text" id="food-search" placeholder="Szukaj produktu..." oninput="renderFoods()">
-                    <div id="foods-list"></div>
-                </div>
-            </div>
-
-            <!-- WORKOUT -->
-            <div id="workout" class="view">
-                <div class="flex-between mb-1">
-                    <h2>Treningi</h2>
-                    <button class="btn-primary" onclick="createEmptyWorkout()">Nowy Trening</button>
-                </div>
-                <div id="workout-list" class="grid-2"></div>
-            </div>
-
-            <!-- CALENDAR -->
-            <div id="calendar" class="view">
-                <h2>Kalendarz</h2>
-                <div class="card">
-                    <div class="flex-between">
-                        <button class="btn-icon" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                        <h3 id="cal-month-year"></h3>
-                        <button class="btn-icon" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
-                    <div class="calendar-grid" style="font-weight:bold; text-align:center; margin-bottom:10px;">
-                        <div>Pn</div><div>Wt</div><div>Śr</div><div>Cz</div><div>Pt</div><div>Sb</div><div>Nd</div>
-                    </div>
-                    <div id="calendar-days" class="calendar-grid"></div>
-                </div>
-                <div class="card" id="cal-day-details" style="display:none;">
-                    <h3 id="cal-detail-date"></h3>
-                    <div id="cal-detail-content" class="mt-1"></div>
-                </div>
-            </div>
-
-            <!-- STATS -->
-            <div id="stats" class="view">
-                <h2>Statystyki</h2>
-                <div class="card">
-                    <h3>Waga ciała (ostatnie 30 dni)</h3>
-                    <canvas id="weightChart" height="100"></canvas>
-                </div>
-                <div class="card">
-                    <h3>Spożycie Kalorii</h3>
-                    <canvas id="calChart" height="100"></canvas>
-                </div>
-            </div>
-
-            <!-- SETTINGS -->
-            <div id="settings" class="view">
-                <h2>Ustawienia</h2>
-                <div class="card">
-                    <h3>Motyw</h3>
-                    <select id="set-theme" onchange="changeTheme(this.value)">
-                        <option value="light">Jasny</option>
-                        <option value="dark">Ciemny</option>
-                    </select>
-                </div>
-                <div class="card grid-2">
-                    <div><label>Cel Kalorii</label><input type="number" id="set-cal"></div>
-                    <div><label>Cel Wody (ml)</label><input type="number" id="set-water"></div>
-                    <div><label>Białko (g)</label><input type="number" id="set-p"></div>
-                    <div><label>Węglowodany (g)</label><input type="number" id="set-c"></div>
-                    <div><label>Tłuszcze (g)</label><input type="number" id="set-f"></div>
-                </div>
-                <button class="btn-primary" onclick="saveSettings()">Zapisz Ustawienia</button>
-
-                <div class="card mt-1" style="border-color: var(--danger)">
-                    <h3 style="color: var(--danger)">Zarządzanie danymi</h3>
-                    <button class="btn-icon mt-1" style="width:auto; padding:0.5rem 1rem" onclick="exportData()">Eksportuj JSON</button>
-                    <button class="btn-danger mt-1" onclick="resetData()">Zresetuj całą aplikację</button>
-                </div>
-            </div>
-        </main>
-
-        <nav class="bottom-nav">
-            <a href="#" class="nav-link active" data-target="dashboard"><i class="fa-solid fa-house"></i>Start</a>
-            <a href="#" class="nav-link" data-target="calendar"><i class="fa-regular fa-calendar"></i>Kalendarz</a>
-            <a href="#" class="nav-link" data-target="diet"><i class="fa-solid fa-utensils"></i>Dieta</a>
-            <a href="#" class="nav-link" data-target="workout"><i class="fa-solid fa-fire"></i>Trening</a>
-            <a href="#" class="nav-link" data-target="settings"><i class="fa-solid fa-ellipsis"></i>Więcej</a>
-        </nav>
-    </div>
-
-    <!-- Modals -->
-    <div class="modal-overlay" id="modal-meal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('modal-meal')">&times;</button>
-            <h2>Dodaj Posiłek</h2>
-            <label>Typ posiłku</label>
-            <select id="meal-type">
-                <option value="Śniadanie">Śniadanie</option>
-                <option value="II Śniadanie">II Śniadanie</option>
-                <option value="Obiad">Obiad</option>
-                <option value="Podwieczorek">Podwieczorek</option>
-                <option value="Kolacja">Kolacja</option>
-                <option value="Przekąska">Przekąska</option>
-            </select>
-            <label>Wybierz produkt z bazy</label>
-            <select id="meal-food-select" onchange="calcMeal()"></select>
-            <label>Waga (g)</label>
-            <input type="number" id="meal-amount" value="100" oninput="calcMeal()">
+        <!-- KALENDARZ DIETY -->
+        <section id="dieta" class="tab-content">
+            <h2 class="text-3xl font-bold mb-6 text-gray-700">Kalendarz Diety</h2>
             
-            <div class="grid-4 text-center mt-1 mb-1">
-                <div>Kcal<br><b id="meal-c-calc">0</b></div>
-                <div>B<br><b id="meal-p-calc">0</b></div>
-                <div>W<br><b id="meal-w-calc">0</b></div>
-                <div>T<br><b id="meal-t-calc">0</b></div>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-semibold mb-4">Dodaj Posiłek</h3>
+                <form id="dietForm" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                    <input type="date" id="dietDate" class="border p-2 rounded" required>
+                    <input type="text" id="mealName" placeholder="Nazwa posiłku" class="border p-2 rounded col-span-2" required>
+                    <input type="number" id="mealKcal" placeholder="Kcal" class="border p-2 rounded" required>
+                    <input type="number" id="mealProtein" placeholder="Białko (g)" class="border p-2 rounded">
+                    <button type="submit" class="bg-green-500 text-white font-bold p-2 rounded hover:bg-green-600">Dodaj</button>
+                </form>
             </div>
-            <button class="btn-primary" style="width:100%" onclick="saveMeal()">Dodaj do dziennika</button>
-        </div>
-    </div>
 
-    <div class="modal-overlay" id="modal-food">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('modal-food')">&times;</button>
-            <h2>Nowy Produkt (na 100g)</h2>
-            <label>Nazwa</label><input type="text" id="new-food-name">
-            <div class="grid-2">
-                <div><label>Kcal</label><input type="number" id="new-food-cal"></div>
-                <div><label>Białko</label><input type="number" id="new-food-p"></div>
-                <div><label>Węgle</label><input type="number" id="new-food-c"></div>
-                <div><label>Tłuszcz</label><input type="number" id="new-food-f"></div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4">Lista posiłków</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-3 border-b">Data</th>
+                                <th class="p-3 border-b">Posiłek</th>
+                                <th class="p-3 border-b">Kcal</th>
+                                <th class="p-3 border-b">Białko</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dietTableBody">
+                            <!-- Dane z Supabase -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <button class="btn-primary" style="width:100%" onclick="saveNewFood()">Zapisz Produkt</button>
-        </div>
-    </div>
+        </section>
 
-    <div class="modal-overlay" id="modal-weight">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal('modal-weight')">&times;</button>
-            <h2>Nowy Pomiar</h2>
-            <label>Waga (kg)</label><input type="number" id="weight-val" step="0.1">
-            <label>BF % (opcjonalnie)</label><input type="number" id="weight-bf" step="0.1">
-            <button class="btn-primary" style="width:100%" onclick="saveWeight()">Zapisz Pomiar</button>
-        </div>
-    </div>
+        <!-- KALENDARZ TRENINGÓW -->
+        <section id="trening" class="tab-content">
+            <h2 class="text-3xl font-bold mb-6 text-gray-700">Kalendarz Treningów</h2>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h3 class="text-xl font-semibold mb-4">Zaplanuj Trening</h3>
+                <form id="workoutForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <input type="date" id="workoutDate" class="border p-2 rounded" required>
+                    <input type="text" id="exerciseName" placeholder="Ćwiczenie / Plan" class="border p-2 rounded col-span-2" required>
+                    <input type="text" id="workoutDetails" placeholder="Serie x Powt. (np. 4x10)" class="border p-2 rounded">
+                    <button type="submit" class="bg-blue-600 text-white font-bold p-2 rounded hover:bg-blue-700">Dodaj</button>
+                </form>
+            </div>
 
-    <!-- Active Workout Mode -->
-    <div id="workout-mode">
-        <div class="flex-between mb-1">
-            <h2 id="wm-title">Trening</h2>
-            <button class="btn-danger" onclick="endWorkout()">Zakończ</button>
-        </div>
-        <div class="card text-center" style="background: var(--primary); color: white;">
-            <h3>Czas Treningu</h3>
-            <div class="text-2xl" id="wm-timer">00:00</div>
-        </div>
-        <div id="wm-exercises"></div>
-        <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="addExerciseToActiveWorkout()">+ Dodaj ćwiczenie</button>
-    </div>
+            <div class="grid grid-cols-1 md:grid-cols-7 gap-4" id="workoutCalendarGrid">
+                <!-- Prosta wizualizacja kalendarza zostanie wygenerowana w JS -->
+            </div>
+        </section>
+
+    </main>
 
     <script>
-        // ==========================================
-        // 1. CONFIGURATION & SUPABASE INIT
-        // ==========================================
-        const SUPABASE_URL = "TU_WKLEJ_SUPABASE_URL";
-        const SUPABASE_ANON_KEY = "TU_WKLEJ_SUPABASE_ANON_KEY";
+        // --- 1. KONFIGURACJA SUPABASE ---
+        // PAMIĘTAJ: Zmień te dane na swoje z panelu Supabase (Project Settings -> API)
+        const SUPABASE_URL = 'https://twoj-projekt.supabase.co';
+        const SUPABASE_ANON_KEY = 'twoj-anon-key';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Inicjalizacja (zakomentowana, żeby uniknąć błędów w konsoli przed wpisaniem poprawnych kluczy)
+        // const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // ==========================================
-        // 2. STATE MANAGEMENT
-        // ==========================================
-        let state = {
-            settings: null,
-            todayDate: new Date().toISOString().split('T')[0],
-            foods: [],
-            mealsToday: [],
-            waterToday: 0,
-            activeWorkout: null,
-            workoutTimer: null,
-            workoutSeconds: 0
-        };
-
-        // ==========================================
-        // 3. INITIALIZATION
-        // ==========================================
-        async function initApp() {
-            try {
-                const { data, error } = await supabase.from('settings').select('*').limit(1).single();
-                if (data) {
-                    state.settings = data;
-                    document.getElementById('app').style.display = 'flex';
-                    document.getElementById('onboarding').style.display = 'none';
-                    applyTheme(data.theme);
-                    loadDashboard();
-                    loadFoods();
-                    initCalendar();
-                } else {
-                    document.getElementById('app').style.display = 'none';
-                    document.getElementById('onboarding').style.display = 'block';
-                }
-            } catch (err) {
-                // If table doesn't exist or no rows
-                document.getElementById('app').style.display = 'none';
-                document.getElementById('onboarding').style.display = 'block';
-            }
-            
-            // Event Listeners for Nav
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                    const target = link.getAttribute('data-target');
-                    document.querySelectorAll(`[data-target="${target}"]`).forEach(l => l.classList.add('active'));
-                    navTo(target);
-                });
+        // --- 2. LOGIKA ZAKŁADEK ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
             });
+            document.getElementById(tabId).classList.add('active');
         }
 
-        function navTo(viewId) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            if(viewId === 'dashboard') loadDashboard();
-            if(viewId === 'workout') loadWorkouts();
-            if(viewId === 'stats') renderStats();
-            if(viewId === 'settings') populateSettings();
-        }
-
-        // ==========================================
-        // 4. ONBOARDING & SETTINGS
-        // ==========================================
-        async function saveOnboarding() {
-            const name = document.getElementById('ob-name').value || 'Użytkownik';
-            const age = Number(document.getElementById('ob-age').value);
-            const gender = document.getElementById('ob-gender').value;
-            const height = Number(document.getElementById('ob-height').value);
-            const weight = Number(document.getElementById('ob-weight').value);
-            const goal = document.getElementById('ob-goal').value;
-            const activity = Number(document.getElementById('ob-activity').value);
-            
-            if(!age || !height || !weight) return alert("Wypełnij wiek, wzrost i wagę!");
-
-            // BMR (Mifflin-St Jeor)
-            let bmr = (10 * weight) + (6.25 * height) - (5 * age);
-            bmr = gender === 'M' ? bmr + 5 : bmr - 161;
-            let tdee = bmr * activity;
-            
-            let calTarget = tdee;
-            if(goal === 'cut') calTarget -= 500;
-            if(goal === 'bulk') calTarget += 300;
-
-            const pTarget = weight * 2; // 2g per kg
-            const fTarget = weight * 1; // 1g per kg
-            const cTarget = (calTarget - (pTarget*4 + fTarget*9)) / 4;
-
-            const newSettings = {
-                name, age, gender, height, current_weight: weight,
-                goal, activity_level: activity, 
-                calorie_target: Math.round(calTarget),
-                protein_target: Math.round(pTarget),
-                carbs_target: Math.round(cTarget),
-                fat_target: Math.round(fTarget),
-                water_target: 2500,
-                theme: 'dark'
-            };
-
-            await supabase.from('settings').insert([newSettings]);
-            await supabase.from('body_measurements').insert([{date: state.todayDate, weight}]);
-            
-            window.location.reload();
-        }
-
-        // ==========================================
-        // 5. DASHBOARD
-        // ==========================================
-        async function loadDashboard() {
-            document.getElementById('greet-name').innerText = `Dzień dobry, ${state.settings.name} 👋`;
-            document.getElementById('current-date-display').innerText = state.todayDate;
-            
-            // Load Meals
-            const {data: meals} = await supabase.from('meals').select('*').eq('date', state.todayDate);
-            state.mealsToday = meals || [];
-            
-            // Load Water
-            const {data: water} = await supabase.from('water_intake').select('*').eq('date', state.todayDate).single();
-            state.waterToday = water ? water.amount_ml : 0;
-
-            updateDashboardUI();
-        }
-
-        function updateDashboardUI() {
-            let cals=0, p=0, c=0, f=0;
-            state.mealsToday.forEach(m => {
-                cals += m.calories; p += m.protein; c += m.carbs; f += m.fat;
-            });
-
-            const st = state.settings;
-            document.getElementById('dash-cals-in').innerText = Math.round(cals);
-            document.getElementById('dash-cals-target').innerText = st.calorie_target;
-            document.getElementById('dash-cals-bar').style.width = Math.min(100, (cals/st.calorie_target)*100) + '%';
-            
-            document.getElementById('dash-p').innerText = Math.round(p); document.getElementById('dash-p-t').innerText = st.protein_target;
-            document.getElementById('dash-c').innerText = Math.round(c); document.getElementById('dash-c-t').innerText = st.carbs_target;
-            document.getElementById('dash-f').innerText = Math.round(f); document.getElementById('dash-f-t').innerText = st.fat_target;
-
-            document.getElementById('dash-water').innerText = state.waterToday;
-            document.getElementById('dash-water-t').innerText = st.water_target;
-            document.getElementById('dash-water-bar').style.width = Math.min(100, (state.waterToday/st.water_target)*100) + '%';
-
-            // Meals list
-            const mealList = document.getElementById('dash-meals-list');
-            if(state.mealsToday.length === 0) {
-                mealList.innerHTML = '<p class="text-center text-muted">Brak posiłków. Dodaj pierwszy posiłek!</p>';
-            } else {
-                mealList.innerHTML = state.mealsToday.map(m => `
-                    <div class="list-item">
-                        <div>
-                            <strong>${m.meal_type}</strong> - ${m.name} (${m.quantity}g)<br>
-                            <small class="text-muted">B:${m.protein}g W:${m.carbs}g T:${m.fat}g</small>
-                        </div>
-                        <div class="flex-center">
-                            <b>${m.calories} kcal</b>
-                            <button class="btn-icon" style="color:var(--danger); width:30px;height:30px;" onclick="deleteMeal(${m.id})"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `).join('');
+        // --- 3. WYKRESY (Chart.js) ---
+        // Wykres Makroskładników (Kołowy)
+        const ctxMacro = document.getElementById('macroChart').getContext('2d');
+        new Chart(ctxMacro, {
+            type: 'doughnut',
+            data: {
+                labels: ['Białko', 'Węglowodany', 'Tłuszcze'],
+                datasets: [{
+                    data: [150, 200, 70], // Przykładowe dane w gramach
+                    backgroundColor: ['#ef4444', '#3b82f6', '#eab308']
+                }]
             }
-        }
+        });
 
-        async function addWater(amount) {
-            state.waterToday += amount;
-            const {data: existing} = await supabase.from('water_intake').select('id').eq('date', state.todayDate).single();
-            if(existing) {
-                await supabase.from('water_intake').update({amount_ml: state.waterToday}).eq('id', existing.id);
-            } else {
-                await supabase.from('water_intake').insert([{date: state.todayDate, amount_ml: state.waterToday}]);
-            }
-            updateDashboardUI();
-        }
+        // Wykres Wody (Słupkowy)
+        const ctxWater = document.getElementById('waterChart').getContext('2d');
+        new Chart(ctxWater, {
+            type: 'bar',
+            data: {
+                labels: ['Pon', 'Wto', 'Śro', 'Czw', 'Pią', 'Sob', 'Nie'],
+                datasets: [{
+                    label: 'Litry',
+                    data: [2, 2.5, 1.8, 3, 2.2, 2.8, 2.5],
+                    backgroundColor: '#38bdf8'
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
 
-        // ==========================================
-        // 6. DIET & FOODS
-        // ==========================================
-        async function loadFoods() {
-            const {data} = await supabase.from('foods').select('*').order('name');
-            state.foods = data || [];
-            const select = document.getElementById('meal-food-select');
-            select.innerHTML = '<option value="">-- Wybierz --</option>' + state.foods.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
-            renderFoods();
-        }
+        // --- 4. OBSŁUGA FORMULARZY I SUPABASE (Szablon) ---
 
-        function renderFoods() {
-            const search = document.getElementById('food-search').value.toLowerCase();
-            const list = document.getElementById('foods-list');
-            const filtered = state.foods.filter(f => f.name.toLowerCase().includes(search));
-            list.innerHTML = filtered.map(f => `
-                <div class="list-item">
-                    <div><strong>${f.name}</strong><br><small>${f.calories_per_100g} kcal/100g</small></div>
-                </div>
-            `).join('');
-        }
+        // Dieta
+        document.getElementById('dietForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = document.getElementById('dietDate').value;
+            const name = document.getElementById('mealName').value;
+            const kcal = document.getElementById('mealKcal').value;
+            const protein = document.getElementById('mealProtein').value;
 
-        async function saveNewFood() {
-            const name = document.getElementById('new-food-name').value;
-            const cal = Number(document.getElementById('new-food-cal').value);
-            const p = Number(document.getElementById('new-food-p').value);
-            const c = Number(document.getElementById('new-food-c').value);
-            const f = Number(document.getElementById('new-food-f').value);
-            if(!name || !cal) return alert("Podaj nazwę i kalorie!");
+            /* LOGIKA SUPABASE - ODKOMENTUJ PO SKONFIGUROWANIU BAZY
+            const { data, error } = await supabase
+                .from('dieta')
+                .insert([{ data: date, nazwa: name, kcal: kcal, bialko: protein }]);
             
-            await supabase.from('foods').insert([{name, calories_per_100g: cal, protein_per_100g: p, carbs_per_100g: c, fat_per_100g: f}]);
-            closeModal('modal-food');
-            await loadFoods();
-        }
-
-        function calcMeal() {
-            const foodId = document.getElementById('meal-food-select').value;
-            const amount = Number(document.getElementById('meal-amount').value) || 0;
-            if(!foodId) return;
-            const food = state.foods.find(f => f.id == foodId);
-            const mult = amount / 100;
-            document.getElementById('meal-c-calc').innerText = Math.round(food.calories_per_100g * mult);
-            document.getElementById('meal-p-calc').innerText = Math.round(food.protein_per_100g * mult);
-            document.getElementById('meal-w-calc').innerText = Math.round(food.carbs_per_100g * mult);
-            document.getElementById('meal-t-calc').innerText = Math.round(food.fat_per_100g * mult);
-        }
-
-        async function saveMeal() {
-            const foodId = document.getElementById('meal-food-select').value;
-            const amount = Number(document.getElementById('meal-amount').value);
-            if(!foodId || !amount) return alert("Wybierz produkt i wagę!");
-            const food = state.foods.find(f => f.id == foodId);
-            const mult = amount / 100;
+            if(!error) loadDiet();
+            */
             
-            const meal = {
-                date: state.todayDate,
-                meal_type: document.getElementById('meal-type').value,
-                name: food.name,
-                quantity: amount,
-                calories: Math.round(food.calories_per_100g * mult),
-                protein: Math.round(food.protein_per_100g * mult),
-                carbs: Math.round(food.carbs_per_100g * mult),
-                fat: Math.round(food.fat_per_100g * mult)
-            };
-            
-            await supabase.from('meals').insert([meal]);
-            closeModal('modal-meal');
-            await loadDashboard();
-        }
+            // Tymczasowy kod pokazujący działanie UI
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td class="p-3 border-b">${date}</td><td class="p-3 border-b">${name}</td><td class="p-3 border-b">${kcal}</td><td class="p-3 border-b">${protein}g</td>`;
+            document.getElementById('dietTableBody').appendChild(tr);
+            e.target.reset();
+        });
 
-        async function deleteMeal(id) {
-            await supabase.from('meals').delete().eq('id', id);
-            await loadDashboard();
-        }
+        // Trening (Generowanie prostych kafelków na siatce)
+        document.getElementById('workoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = document.getElementById('workoutDate').value;
+            const exercise = document.getElementById('exerciseName').value;
+            const details = document.getElementById('workoutDetails').value;
 
-        // ==========================================
-        // 7. WORKOUTS (Live Mode)
-        // ==========================================
-        async function loadWorkouts() {
-            const {data} = await supabase.from('workouts').select('*').order('created_at', {ascending:false}).limit(10);
-            const list = document.getElementById('workout-list');
-            if(!data || data.length === 0) {
-                list.innerHTML = '<p class="text-muted">Brak treningów.</p>';
-                return;
-            }
-            list.innerHTML = data.map(w => `
-                <div class="card">
-                    <h3>${w.name || 'Trening'}</h3>
-                    <p class="text-muted">${w.date}</p>
-                    <p>Status: ${w.completed ? '✅ Zakończony' : 'W trakcie'}</p>
-                </div>
-            `).join('');
-        }
+            /* LOGIKA SUPABASE - ODKOMENTUJ PO SKONFIGUROWANIU BAZY
+            const { data, error } = await supabase
+                .from('treningi')
+                .insert([{ data: date, cwiczenie: exercise, detale: details }]);
+            */
 
-        async function createEmptyWorkout() {
-            const {data} = await supabase.from('workouts').insert([{date: state.todayDate, name: 'Mój Trening'}]).select().single();
-            state.activeWorkout = { ...data, exercises: [] };
-            startWorkoutMode();
-        }
+            const grid = document.getElementById('workoutCalendarGrid');
+            const card = document.createElement('div');
+            card.className = "bg-blue-50 p-4 rounded border-l-4 border-blue-500 shadow-sm";
+            card.innerHTML = `<div class="text-sm text-gray-500 mb-1">${date}</div><div class="font-bold text-lg">${exercise}</div><div class="text-sm">${details}</div>`;
+            grid.appendChild(card);
+            e.target.reset();
+        });
 
-        function startWorkoutMode() {
-            document.getElementById('workout-mode').classList.add('active');
-            state.workoutSeconds = 0;
-            if(state.workoutTimer) clearInterval(state.workoutTimer);
-            state.workoutTimer = setInterval(() => {
-                state.workoutSeconds++;
-                const m = String(Math.floor(state.workoutSeconds / 60)).padStart(2, '0');
-                const s = String(state.workoutSeconds % 60).padStart(2, '0');
-                document.getElementById('wm-timer').innerText = `${m}:${s}`;
-            }, 1000);
-            renderActiveWorkout();
-        }
-
-        function renderActiveWorkout() {
-            const exContainer = document.getElementById('wm-exercises');
-            exContainer.innerHTML = state.activeWorkout.exercises.map((ex, i) => `
-                <div class="card mb-1">
-                    <h3>${ex.name}</h3>
-                    <div class="mt-1">
-                        ${ex.sets.map((s, j) => `
-                            <div class="set-row">
-                                <b>Seria ${j+1}</b>
-                                <input type="number" placeholder="kg" value="${s.weight || ''}" onchange="updateSet(${i},${j},'weight',this.value)">
-                                <span>x</span>
-                                <input type="number" placeholder="powt" value="${s.reps || ''}" onchange="updateSet(${i},${j},'reps',this.value)">
-                                <input type="checkbox" ${s.completed ? 'checked' : ''} onchange="updateSet(${i},${j},'completed',this.checked)" style="width:20px;">
-                            </div>
-                        `).join('')}
-                    </div>
-                    <button class="btn-icon mt-1" onclick="addSetToExercise(${i})"><i class="fa-solid fa-plus"></i> Seria</button>
-                </div>
-            `).join('');
-        }
-
-        function addExerciseToActiveWorkout() {
-            const name = prompt("Nazwa ćwiczenia (np. Wyciskanie sztangi):");
-            if(name) {
-                state.activeWorkout.exercises.push({ name: name, sets: [{weight:0, reps:0, completed:false}] });
-                renderActiveWorkout();
-            }
-        }
-        function addSetToExercise(exIndex) {
-            state.activeWorkout.exercises[exIndex].sets.push({weight:0, reps:0, completed:false});
-            renderActiveWorkout();
-        }
-        function updateSet(exIndex, setIndex, field, val) {
-            state.activeWorkout.exercises[exIndex].sets[setIndex][field] = field === 'completed' ? val : Number(val);
-        }
-
-        async function endWorkout() {
-            clearInterval(state.workoutTimer);
-            document.getElementById('workout-mode').classList.remove('active');
-            
-            // Save to DB
-            const m = Math.floor(state.workoutSeconds / 60);
-            await supabase.from('workouts').update({completed: true, duration: m}).eq('id', state.activeWorkout.id);
-            
-            // Save sets (simplified dump to notes for this lightweight version)
-            const notes = JSON.stringify(state.activeWorkout.exercises);
-            await supabase.from('workouts').update({notes: notes}).eq('id', state.activeWorkout.id);
-            
-            state.activeWorkout = null;
-            loadWorkouts();
-        }
-
-        // ==========================================
-        // 8. CALENDAR
-        // ==========================================
-        let currentMonth = new Date().getMonth();
-        let currentYear = new Date().getFullYear();
-
-        async function initCalendar() {
-            renderCalendarGrid();
-        }
-
-        function changeMonth(dir) {
-            currentMonth += dir;
-            if(currentMonth > 11) { currentMonth = 0; currentYear++; }
-            if(currentMonth < 0) { currentMonth = 11; currentYear--; }
-            renderCalendarGrid();
-        }
-
-        async function renderCalendarGrid() {
-            const monthNames = ["Styczeń","Luty","Marzec","Kwiecień","Maj","Czerwiec","Lipiec","Sierpień","Wrzesień","Październik","Listopad","Grudzień"];
-            document.getElementById('cal-month-year').innerText = `${monthNames[currentMonth]} ${currentYear}`;
-            
-            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const startPad = firstDay === 0 ? 6 : firstDay - 1;
-            
-            const startDateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
-            const endDateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${daysInMonth}`;
-            
-            // Fetch data for dots
-            const [mealsRes, workRes] = await Promise.all([
-                supabase.from('meals').select('date').gte('date', startDateStr).lte('date', endDateStr),
-                supabase.from('workouts').select('date').gte('date', startDateStr).lte('date', endDateStr)
-            ]);
-            
-            const mealDates = new Set(mealsRes.data?.map(d => d.date) || []);
-            const workDates = new Set(workRes.data?.map(d => d.date) || []);
-
-            let html = '';
-            for(let i=0; i<startPad; i++) html += `<div></div>`;
-            
-            for(let i=1; i<=daysInMonth; i++) {
-                const dStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                const isToday = dStr === state.todayDate;
-                
-                let dots = '';
-                if(mealDates.has(dStr)) dots += `<div class="dot" style="background:var(--success)"></div>`;
-                if(workDates.has(dStr)) dots += `<div class="dot" style="background:var(--primary)"></div>`;
-
-                html += `
-                    <div class="calendar-day ${isToday ? 'today' : ''}" onclick="showDayDetails('${dStr}')">
-                        ${i}
-                        <div class="calendar-dots">${dots}</div>
-                    </div>
-                `;
-            }
-            document.getElementById('calendar-days').innerHTML = html;
-        }
-
-        async function showDayDetails(date) {
-            document.getElementById('cal-day-details').style.display = 'block';
-            document.getElementById('cal-detail-date').innerText = `Podsumowanie: ${date}`;
-            
-            const [mealsRes, workRes] = await Promise.all([
-                supabase.from('meals').select('*').eq('date', date),
-                supabase.from('workouts').select('*').eq('date', date)
-            ]);
-            
-            let html = `<h4>Dieta</h4>`;
-            if(mealsRes.data && mealsRes.data.length > 0) {
-                let cals = 0; mealsRes.data.forEach(m => cals += m.calories);
-                html += `<p>Spożyto: ${cals} kcal z ${mealsRes.data.length} posiłków.</p>`;
-            } else { html += `<p>Brak wpisów.</p>`; }
-
-            html += `<h4 class="mt-1">Trening</h4>`;
-            if(workRes.data && workRes.data.length > 0) {
-                html += `<p>Wykonano ${workRes.data.length} trening(ów).</p>`;
-            } else { html += `<p>Brak treningu.</p>`; }
-            
-            document.getElementById('cal-detail-content').innerHTML = html;
-        }
-
-        // ==========================================
-        // 9. WEIGHT & STATS (Chart.js)
-        // ==========================================
-        async function saveWeight() {
-            const w = Number(document.getElementById('weight-val').value);
-            if(!w) return;
-            await supabase.from('body_measurements').insert([{date: state.todayDate, weight: w}]);
-            closeModal('modal-weight');
-            await loadDashboard();
-            if(document.getElementById('stats').classList.contains('active')) renderStats();
-        }
-
-        async function renderStats() {
-            // Fetch 30 days of weight
-            const d30 = new Date(); d30.setDate(d30.getDate() - 30);
-            const d30Str = d30.toISOString().split('T')[0];
-
-            const {data: weights} = await supabase.from('body_measurements').select('date, weight').gte('date', d30Str).order('date');
-            if(weights && weights.length > 0) {
-                const ctxW = document.getElementById('weightChart');
-                if(window.wChart) window.wChart.destroy();
-                window.wChart = new Chart(ctxW, {
-                    type: 'line',
-                    data: {
-                        labels: weights.map(w => w.date.substring(5)),
-                        datasets: [{ label: 'Waga (kg)', data: weights.map(w => w.weight), borderColor: '#3b82f6', tension: 0.3 }]
-                    }
-                });
-            }
-
-            // Fetch 7 days of calories (meals)
-            const d7 = new Date(); d7.setDate(d7.getDate() - 7);
-            const d7Str = d7.toISOString().split('T')[0];
-            const {data: meals} = await supabase.from('meals').select('date, calories').gte('date', d7Str);
-            
-            const calMap = {};
-            if(meals) meals.forEach(m => { calMap[m.date] = (calMap[m.date]||0) + m.calories; });
-            
-            const labels = Object.keys(calMap).sort();
-            const data = labels.map(l => calMap[l]);
-            
-            const ctxC = document.getElementById('calChart');
-            if(window.cChart) window.cChart.destroy();
-            window.cChart = new Chart(ctxC, {
-                type: 'bar',
-                data: {
-                    labels: labels.map(l => l.substring(5)),
-                    datasets: [{ label: 'Kcal', data: data, backgroundColor: '#10b981' }]
-                }
-            });
-        }
-
-        // ==========================================
-        // 10. SETTINGS & UTILS
-        // ==========================================
-        function populateSettings() {
-            const st = state.settings;
-            document.getElementById('set-theme').value = st.theme || 'light';
-            document.getElementById('set-cal').value = st.calorie_target;
-            document.getElementById('set-water').value = st.water_target;
-            document.getElementById('set-p').value = st.protein_target;
-            document.getElementById('set-c').value = st.carbs_target;
-            document.getElementById('set-f').value = st.fat_target;
-        }
-
-        async function saveSettings() {
-            const updates = {
-                theme: document.getElementById('set-theme').value,
-                calorie_target: Number(document.getElementById('set-cal').value),
-                water_target: Number(document.getElementById('set-water').value),
-                protein_target: Number(document.getElementById('set-p').value),
-                carbs_target: Number(document.getElementById('set-c').value),
-                fat_target: Number(document.getElementById('set-f').value)
-            };
-            await supabase.from('settings').update(updates).eq('id', state.settings.id);
-            state.settings = { ...state.settings, ...updates };
-            applyTheme(state.settings.theme);
-            alert("Zapisano ustawienia!");
-            loadDashboard();
-        }
-
-        function applyTheme(theme) {
-            if(theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
-            else document.documentElement.removeAttribute('data-theme');
-        }
-
-        async function exportData() {
-            // Simplified export for core tables
-            const tables = ['settings', 'meals', 'foods', 'workouts', 'body_measurements', 'water_intake'];
-            const exportObj = {};
-            for(let t of tables) {
-                const {data} = await supabase.from(t).select('*');
-                exportObj[t] = data;
-            }
-            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {type: 'application/json'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `backup_dieta_silownia_${state.todayDate}.json`;
-            a.click();
-        }
-
-        async function resetData() {
-            const conf = prompt("Aby usunąć CAŁE dane aplikacji, wpisz słowo: USUŃ");
-            if(conf === 'USUŃ') {
-                const tables = ['meals', 'foods', 'workouts', 'body_measurements', 'water_intake', 'settings'];
-                for(let t of tables) {
-                    // Delete all via RLS filter trick
-                    await supabase.from(t).delete().neq('id', -1);
-                }
-                alert("Dane usunięte. Odświeżam.");
-                window.location.reload();
-            }
-        }
-
-        // Modals
-        function openModal(id) { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        // Boot
-        window.onload = initApp;
+        // Ustaw dzisiejsze daty domyślnie
+        document.getElementById('dietDate').valueAsDate = new Date();
+        document.getElementById('workoutDate').valueAsDate = new Date();
 
     </script>
 </body>
