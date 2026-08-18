@@ -1,0 +1,16 @@
+{
+  "name": "FitPlan - Twój Trener",
+  "short_name": "FitPlan",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#d4a373",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}
