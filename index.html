@@ -302,17 +302,30 @@
             let waterPercent = (currentWater / goals.target_water) * 100;
             document.getElementById('water-progress').style.width = (waterPercent > 100 ? 100 : waterPercent) + '%';
 
-            // Posiłki
+                        // Posiłki
             const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
             const { data: foodLogs } = await supabaseClient.from('food_log').select('*').gte('created_at', startOfDay.toISOString());
-                        const categories = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja'];
+            const categories = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja'];
+            
             if (foodLogs && foodLogs.length > 0) {
                 categories.forEach(cat => {
                     const mealsInCat = foodLogs.filter(f => f.meal_category === cat);
                     const el = document.getElementById(`dash-${cat.replace(' ', '-')}`);
+                    
                     if (el && mealsInCat.length > 0) {
-                        el.innerText = mealsInCat.map(m => m.food_name).join(', ');
-                        el.style.color = "var(--accent-color)";
+                        // Sumowanie makro dla całego posiłku
+                        const totalKcal = mealsInCat.reduce((sum, item) => sum + (item.kcal || 0), 0);
+                        const totalB = mealsInCat.reduce((sum, item) => sum + (item.protein || 0), 0);
+                        const totalT = mealsInCat.reduce((sum, item) => sum + (item.fats || 0), 0);
+                        const totalW = mealsInCat.reduce((sum, item) => sum + (item.carbs || 0), 0);
+                        
+                        // Złożenie wszystkiego w ładny tekst (nazwy potraw + podsumowanie makro pod spodem)
+                        const foodNames = mealsInCat.map(m => m.food_name).join(', ');
+                        
+                        el.innerHTML = `<span style="color: var(--accent-color);">${foodNames}</span><br>
+                                        <span style="font-size: 10px; color: var(--text-muted); font-weight: normal;">
+                                            🔥 ${totalKcal} kcal &nbsp;|&nbsp; <span style="color: #4da6ff">B: ${totalB}g</span> &nbsp;|&nbsp; <span style="color: #ffcc00">T: ${totalT}g</span> &nbsp;|&nbsp; <span style="color: #66cc66">W: ${totalW}g</span>
+                                        </span>`;
                     }
                 });
             }
