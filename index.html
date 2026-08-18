@@ -5,118 +5,252 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitPlan - Twój Pulpit</title>
     
-    <!-- Biblioteka Supabase do komunikacji z bazą -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* Główne kolory i styl całej strony */
+        /* === GŁÓWNE KOLORY Z TWOJEGO ZDJĘCIA === */
         :root {
-            --bg-color: #0d0d0d;
-            --card-bg: #1a1a1a;
+            --bg-color: #050505; /* Prawie czarne tło */
+            --card-bg: #121212; /* Ciemnoszare kafelki */
+            --card-border: #222222;
             --text-main: #ffffff;
             --text-muted: #888888;
-            --accent-color: #d4a373; /* Złoty kolor z logo */
+            --accent-color: #d4a373; /* Złoty / Pomarańczowy */
+            --accent-hover: #b0865c;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 20px 40px;
         }
 
-        /* Pasek nawigacji */
+        /* === NAWIGACJA (HEADER) === */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #333;
-            margin-bottom: 20px;
+            padding: 10px 0 30px 0;
         }
 
         .logo {
             color: var(--accent-color);
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Układ siatki dla kafelków (Grid) */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+        nav {
+            display: flex;
+            gap: 30px;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
         }
 
-        /* Wygląd pojedynczego kafelka */
-        .card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .card h3 {
-            margin-top: 0;
-            font-size: 14px;
+        nav span {
             color: var(--text-muted);
+            cursor: pointer;
             text-transform: uppercase;
         }
 
-        .value {
-            font-size: 28px;
-            font-weight: bold;
+        nav span.active {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 5px;
+        }
+
+        /* === GŁÓWNY UKŁAD (LEWA I PRAWA STRONA) === */
+        .top-section {
+            display: grid;
+            grid-template-columns: 1fr 2.5fr; /* Lewa mniejsza, prawa większa */
+            gap: 20px;
+        }
+
+        /* === KAFELKI (OGÓLNE STYLE) === */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* === BANER POWITALNY (LEWA STRONA) === */
+        .welcome-card {
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+        }
+
+        .welcome-card h2 {
+            font-size: 32px;
             margin: 10px 0;
+            line-height: 1.1;
+        }
+
+        .welcome-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            width: max-content;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* === STATYSTYKI (PRAWA STRONA) === */
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stats-row-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .stats-row-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .stat-icon {
+            color: var(--accent-color);
+            font-size: 16px;
+        }
+
+        .value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .sub-text {
+            color: var(--text-muted);
+            font-size: 11px;
         }
     </style>
 </head>
 <body>
 
+    <!-- PASEK NAWIGACJI -->
     <header>
-        <div class="logo">||= FITPLAN</div>
+        <div class="logo"><span>||=</span> FITPLAN</div>
         <nav>
-            <span style="color: var(--accent-color); margin-right: 15px;">PULPIT</span>
-            <span style="color: var(--text-muted);">DIETA</span>
+            <span class="active">PULPIT</span>
+            <span>DIETA</span>
+            <span>TRENING</span>
+            <span>POSTĘPY</span>
+            <span>KALKULATOR</span>
         </nav>
+        <div style="color: var(--text-muted); font-size: 20px;">⚙</div>
     </header>
 
-    <!-- Tutaj będą nasze puste kafelki czekające na dane z Supabase -->
-    <main class="dashboard-grid">
+    <!-- GŁÓWNA SEKCJA -->
+    <main class="top-section">
         
-        <div class="card">
-            <h3>Kalorie</h3>
-            <div class="value" id="kcal-value">-- kcal</div>
-            <div style="color: var(--text-muted); font-size: 12px;">z zaplanowanych</div>
+        <!-- LEWA STRONA: BANER POWITALNY -->
+        <div class="card welcome-card">
+            <div style="font-size: 12px; color: var(--text-muted); letter-spacing: 1px;">WITAJ!</div>
+            <h2>TWÓJ PLAN.<br>TWOJE CELE.<br><span style="color: var(--accent-color);">TWOJE WYNIKI.</span></h2>
+            <p>Stwórz swój plan diety i treningu dopasowany do Ciebie.</p>
+            <button class="btn">USTAW SWOJE CELE</button>
         </div>
 
-        <div class="card">
-            <h3>Białko</h3>
-            <div class="value" id="protein-value">-- g</div>
-            <div style="color: var(--text-muted); font-size: 12px;">z zaplanowanych</div>
-        </div>
+        <!-- PRAWA STRONA: STATYSTYKI -->
+        <div class="stats-container">
+            
+            <!-- Górny rządek: 4 małe kafelki -->
+            <div class="stats-row-4">
+                <div class="card">
+                    <div class="stat-header"><span class="stat-icon">🔥</span> KALORIE</div>
+                    <div class="value" id="kcal-value">-- kcal</div>
+                    <div class="sub-text">z zaplanowanych</div>
+                </div>
+                <div class="card">
+                    <div class="stat-header"><span class="stat-icon" style="color: #4da6ff;">👤</span> BIAŁKO</div>
+                    <div class="value" id="protein-value">-- g</div>
+                    <div class="sub-text">z zaplanowanych</div>
+                </div>
+                <div class="card">
+                    <div class="stat-header"><span class="stat-icon" style="color: #ffcc00;">💧</span> TŁUSZCZE</div>
+                    <div class="value" id="fats-value">-- g</div>
+                    <div class="sub-text">z zaplanowanych</div>
+                </div>
+                <div class="card">
+                    <div class="stat-header"><span class="stat-icon" style="color: #66cc66;">🍃</span> WĘGLOWODANY</div>
+                    <div class="value" id="carbs-value">-- g</div>
+                    <div class="sub-text">z zaplanowanych</div>
+                </div>
+            </div>
 
-        <div class="card">
-            <h3>Woda</h3>
-            <div class="value" id="water-value">-- L / -- L</div>
-            <div style="color: var(--text-muted); font-size: 12px;">z dziennego celu</div>
+            <!-- Dolny rządek: 2 szersze kafelki -->
+            <div class="stats-row-2">
+                <div class="card">
+                    <div class="stat-header"><span class="stat-icon" style="color: #4da6ff;">💧</span> WODA</div>
+                    <div class="value" id="water-value">-- L / 2.5 L</div>
+                    <div class="sub-text">z dziennego celu</div>
+                    <!-- Pasek postępu -->
+                    <div style="width: 100%; height: 4px; background-color: #333; margin-top: 10px; border-radius: 2px;">
+                        <div style="width: 0%; height: 100%; background-color: #4da6ff; border-radius: 2px;"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="stat-header"><span class="stat-icon" style="color: #66cc66;">👟</span> KROKI</div>
+                    <div class="value" id="steps-value">-- / 10000</div>
+                    <div class="sub-text">z dziennego celu</div>
+                    <!-- Pasek postępu -->
+                    <div style="width: 100%; height: 4px; background-color: #333; margin-top: 10px; border-radius: 2px;">
+                        <div style="width: 0%; height: 100%; background-color: #66cc66; border-radius: 2px;"></div>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </main>
 
-            <script>
-        // 1. Inicjalizacja połączenia
+    <!-- TWÓJ DZIAŁAJĄCY SKRYPT BAZY DANYCH -->
+    <script>
         const supabaseUrl = 'https://ttgeuikoyfcgiboajhcf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         
-        // ZMIANA TUTAJ: Zmieniliśmy nazwę na supabaseClient
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // 2. Funkcja pobierająca dane
         async function fetchStats() {
-            console.log("Próbuję pobrać dane...");
-            
-            // ZMIANA TUTAJ: Używamy nowej nazwy supabaseClient
             let { data: daily_stats, error } = await supabaseClient
                 .from('daily_stats')
                 .select('*')
@@ -128,18 +262,13 @@
                 return;
             }
 
-            // 3. Jeśli są dane, wklejamy je na stronę
             if (daily_stats) {
-                console.log("Sukces! Pobrane dane to:", daily_stats);
                 document.getElementById('kcal-value').innerText = daily_stats.calories_consumed + ' kcal';
                 document.getElementById('protein-value').innerText = daily_stats.protein_consumed + ' g';
                 document.getElementById('water-value').innerText = daily_stats.water_consumed + ' L / 2.5 L';
-            } else {
-                console.log("Baza jest pusta - nie ma czego wyświetlić.");
             }
         }
 
-        // 4. Uruchamiamy funkcję
         fetchStats();
     </script>
 
