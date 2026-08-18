@@ -29,7 +29,7 @@
         .welcome-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
         .btn { background-color: var(--accent-color); color: #000; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: max-content; text-transform: uppercase; font-size: 12px; }
         .btn:hover { background-color: var(--accent-hover); }
-        .btn-outline { background: transparent; color: var(--accent-color); border: 1px solid var(--accent-color); padding: 8px 15px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .btn-outline { background: transparent; color: var(--accent-color); border: 1px solid var(--accent-color); padding: 8px 15px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         .btn-outline:hover { background: var(--accent-color); color: #000; }
         .stats-container { display: flex; flex-direction: column; gap: 20px; }
         .stats-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
@@ -67,11 +67,10 @@
 
     <main class="top-section">
         <div class="card welcome-card">
-            <!-- Dodane miejsce na dynamiczne imię (id="welcome-name") -->
             <div style="font-size: 12px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Witaj, <span id="welcome-name">Wojowniku</span>!</div>
             <h2>TWÓJ PLAN.<br>TWOJE CELE.<br><span style="color: var(--accent-color);">TWOJE WYNIKI.</span></h2>
             <p>Stwórz swój plan diety i treningu dopasowany do Ciebie.</p>
-            <button class="btn">USTAW SWOJE CELE</button>
+            <button class="btn" onclick="window.location.href='ustawienia.html'">USTAW SWOJE CELE</button>
         </div>
 
         <div class="stats-container">
@@ -100,11 +99,15 @@
 
             <div class="stats-row-1">
                 <div class="card">
-                    <div class="stat-header"><span class="stat-icon" style="color: #4da6ff;">💧</span> WODA</div>
+                    <!-- DODANY PRZYCISK +250ml W NAGŁÓWKU KAFELKA -->
+                    <div class="stat-header" style="justify-content: space-between;">
+                        <div><span class="stat-icon" style="color: #4da6ff;">💧</span> WODA</div>
+                        <button class="btn-outline" style="padding: 4px 10px; border-color: #4da6ff; color: #4da6ff;" onclick="addWater(0.25)">+ 250 ml</button>
+                    </div>
+                    
                     <div class="value" id="water-value">-- / -- L</div>
                     <div class="sub-text">z dziennego celu</div>
                     <div style="width: 100%; height: 4px; background-color: #333; margin-top: 10px; border-radius: 2px;">
-                        <!-- Dodane ID do paska postępu (id="water-progress") -->
                         <div id="water-progress" style="width: 0%; height: 100%; background-color: #4da6ff; border-radius: 2px; transition: width 0.5s ease-in-out;"></div>
                     </div>
                 </div>
@@ -119,32 +122,32 @@
                 <div style="font-size: 12px; color: var(--text-muted);">&lt; Dzisiaj &gt; 📅</div>
             </div>
             
-            <div class="list-item"><div class="item-info"><div class="item-icon">🍳</div><div class="item-text"><h4>Śniadanie</h4><p>Dodaj posiłek</p></div></div><button class="add-btn">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🥪</div><div class="item-text"><h4>II śniadanie</h4><p>Dodaj posiłek</p></div></div><button class="add-btn">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🥩</div><div class="item-text"><h4>Obiad</h4><p>Dodaj posiłek</p></div></div><button class="add-btn">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🥑</div><div class="item-text"><h4>Podwieczorek</h4><p>Dodaj posiłek</p></div></div><button class="add-btn">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🥗</div><div class="item-text"><h4>Kolacja</h4><p>Dodaj posiłek</p></div></div><button class="add-btn">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🍳</div><div class="item-text"><h4>Śniadanie</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥪</div><div class="item-text"><h4>II śniadanie</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥩</div><div class="item-text"><h4>Obiad</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥑</div><div class="item-text"><h4>Podwieczorek</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥗</div><div class="item-text"><h4>Kolacja</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
         </div>
 
         <div class="card" style="justify-content: flex-start;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div class="section-title" style="margin-bottom: 0;"><span class="stat-icon">💪</span> PLAN TRENINGOWY</div>
-                <button class="btn-outline">ZOBACZ KALENDARZ</button>
+                <button class="btn-outline" onclick="window.location.href='trening.html'">ZOBACZ KALENDARZ</button>
             </div>
             <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">&#709; Tydzień 1 <span style="float: right;">&lt; - / - &gt;</span></div>
 
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Poniedziałek</h4><p>Dodaj trening</p></div></div><button class="add-btn">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Wtorek</h4><p>Dodaj trening</p></div></div><button class="add-btn">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Środa</h4><p>Dodaj trening</p></div></div><button class="add-btn">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Czwartek</h4><p>Dodaj trening</p></div></div><button class="add-btn">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Piątek</h4><p>Dodaj trening</p></div></div><button class="add-btn">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Poniedziałek</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Wtorek</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Środa</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Czwartek</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Piątek</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 20px;">
             <div class="card" style="flex: 1; text-align: center;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="section-title" style="margin-bottom: 0;"><span class="stat-icon">📈</span> POSTĘPY</div>
-                    <button class="btn-outline">DODAJ POMIAR</button>
+                    <button class="btn-outline" onclick="window.location.href='postepy.html'">DODAJ POMIAR</button>
                 </div>
                 <div style="margin-top: 30px; color: var(--text-muted);">
                     <div style="font-size: 30px; margin-bottom: 10px;">📉</div>
@@ -169,40 +172,59 @@
         <a href="kalkulator.html"><span class="icon">🧮</span><span>Kalkulator</span></a>
     </nav>
 
-    <!-- ZAAWANSOWANY SKRYPT POBIERAJĄCY OBYDWIE TABELE -->
     <script>
         const supabaseUrl = 'https://ttgeuikoyfcgiboajhcf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        async function fetchDashboardData() {
-            // 1. Pobieramy to co zjadłeś dzisiaj
-            let { data: daily, error: err1 } = await supabaseClient.from('daily_stats').select('*').limit(1).single(); 
-            // 2. Pobieramy Twoje cele z ustawień
-            let { data: goals, error: err2 } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
+        // Zmienne, żeby łatwo zaktualizować wodę
+        let currentDailyId = 1;
+        let currentWater = 0;
 
-            // Zabezpieczenie: Jeśli nie ma danych, podstawiamy puste wartości i domyślne cele
-            if (!daily) daily = { calories_consumed: 0, protein_consumed: 0, fats_consumed: 0, carbs_consumed: 0, water_consumed: 0.0 };
+        async function fetchDashboardData() {
+            let { data: daily } = await supabaseClient.from('daily_stats').select('*').limit(1).single(); 
+            let { data: goals } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
+
+            if (!daily) daily = { id: 1, calories_consumed: 0, protein_consumed: 0, fats_consumed: 0, carbs_consumed: 0, water_consumed: 0.0 };
             if (!goals) goals = { name: 'Wojowniku', target_kcal: 2500, target_protein: 160, target_fats: 80, target_carbs: 280, target_water: 2.5 };
 
-            // 3. Aktualizujemy napis z Imieniem
-            document.getElementById('welcome-name').innerText = goals.name || 'Wojowniku';
+            // Zapisujemy wodę do zmiennych, żeby móc do nich dodawać
+            currentDailyId = daily.id;
+            currentWater = parseFloat(daily.water_consumed) || 0;
 
-            // 4. Sklejamy "Spożyte / Cel" dla poszczególnych kafelków
+            document.getElementById('welcome-name').innerText = goals.name || 'Wojowniku';
             document.getElementById('kcal-value').innerText = `${daily.calories_consumed} / ${goals.target_kcal}`;
             document.getElementById('protein-value').innerText = `${daily.protein_consumed} / ${goals.target_protein}`;
             document.getElementById('fats-value').innerText = `${daily.fats_consumed || 0} / ${goals.target_fats}`;
             document.getElementById('carbs-value').innerText = `${daily.carbs_consumed || 0} / ${goals.target_carbs}`;
             
-            // 5. Specjalna aktualizacja dla Wody (Litrów i paska postępu)
-            document.getElementById('water-value').innerText = `${daily.water_consumed} / ${goals.target_water} L`;
+            // Formatujemy wodę, żeby miała ładne zera (np. 1.50 L)
+            document.getElementById('water-value').innerText = `${currentWater.toFixed(2)} / ${goals.target_water} L`;
             
-            // Obliczamy % paska wody (nie więcej niż 100%)
-            let waterPercent = (daily.water_consumed / goals.target_water) * 100;
+            let waterPercent = (currentWater / goals.target_water) * 100;
             if (waterPercent > 100) waterPercent = 100;
-            if (isNaN(waterPercent)) waterPercent = 0; // Zabezpieczenie na wypadek dzielenia przez zera
+            if (isNaN(waterPercent)) waterPercent = 0; 
             
             document.getElementById('water-progress').style.width = waterPercent + '%';
+        }
+
+        // NOWA FUNKCJA DO KLIKANIA WODY
+        async function addWater(amount) {
+            // Dodajemy wartość i naprawiamy dziwne ułamki (np. 0.25 + 0.25) za pomocą toFixed(2)
+            const newWaterAmount = parseFloat((currentWater + amount).toFixed(2)); 
+
+            const { error } = await supabaseClient
+                .from('daily_stats')
+                .update({ water_consumed: newWaterAmount })
+                .eq('id', currentDailyId);
+
+            if (!error) {
+                // Skoro się zapisało, odświeżamy pulpit żeby pasek podjechał
+                fetchDashboardData(); 
+            } else {
+                console.error("Błąd dodawania wody:", error);
+                alert("Coś poszło nie tak z wodą :(");
+            }
         }
 
         fetchDashboardData();
