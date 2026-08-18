@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitPlan - Twoje Postępy</title>
+    
+    <style>
+        /* === GŁÓWNE STYLE I KOLORY === */
+        :root {
+            --bg-color: #050505;
+            --card-bg: #121212;
+            --card-border: #222222;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --accent-color: #d4a373;
+            --accent-hover: #b0865c;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* === NAWIGACJA GÓRNA === */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 30px 0; flex-wrap: wrap; gap: 15px; }
+        .logo { color: var(--accent-color); font-size: 22px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        header nav { display: flex; gap: 20px; font-size: 13px; font-weight: bold; letter-spacing: 1px; }
+        header nav a { color: var(--text-muted); text-decoration: none; text-transform: uppercase; }
+        header nav a:hover { color: var(--text-main); }
+        header nav a.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 5px; }
+
+        /* === NAWIGACJA MOBILNA === */
+        .mobile-nav { display: none; background-color: var(--bg-color); border-top: 1px solid var(--card-border); position: fixed; bottom: 0; left: 0; width: 100%; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .mobile-nav a { color: var(--text-muted); text-decoration: none; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; text-transform: uppercase; }
+        .mobile-nav a.active { color: var(--accent-color); }
+        .mobile-nav .icon { font-size: 20px; }
+
+        /* === WIDOK POSTĘPÓW === */
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 12px;
+            transition: 0.3s;
+        }
+        .btn:hover { background-color: var(--accent-hover); }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        /* Wykres (Placeholder) */
+        .chart-container {
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 1px dashed #333;
+            border-radius: 8px;
+            background-color: rgba(0,0,0,0.2);
+            color: var(--text-muted);
+        }
+
+        /* Lista historii pomiarów */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .history-date {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .history-data {
+            display: flex;
+            gap: 20px;
+        }
+
+        .data-point {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .data-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .data-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        /* === MEDIA QUERIES === */
+        @media (max-width: 900px) {
+            body { padding-bottom: 80px; }
+            header nav { display: none; }
+            .mobile-nav { display: flex; }
+            .history-item { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .history-data { width: 100%; justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GÓRNA NAWIGACJA -->
+    <header>
+        <div class="logo"><span>||=</span> FITPLAN</div>
+        <nav>
+            <a href="index.html">PULPIT</a>
+            <a href="dieta.html">DIETA</a>
+            <a href="trening.html">TRENING</a>
+            <a href="postepy.html" class="active">POSTĘPY</a>
+            <a href="kalkulator.html">KALKULATOR</a>
+        </nav>
+        <div style="color: var(--text-muted); font-size: 20px;">⚙</div>
+    </header>
+
+    <main style="max-width: 800px; margin: 0 auto;">
+        
+        <div class="header-actions">
+            <div class="page-title"><span style="color: var(--accent-color);">📈</span> Raport Postępów</div>
+            <button class="btn">+ Dodaj pomiar</button>
+        </div>
+
+        <!-- MIEJSCE NA WYKRES -->
+        <div class="card">
+            <h3 style="margin-top: 0; font-size: 14px; color: var(--text-muted); text-transform: uppercase;">Zmiana Wagi</h3>
+            <div class="chart-container">
+                <div style="font-size: 30px; margin-bottom: 10px;">📉</div>
+                <h4 style="margin: 0; color: var(--text-main);">Brak danych do wykresu</h4>
+                <p style="font-size: 12px; margin-top: 5px;">Dodaj co najmniej dwa pomiary, aby zobaczyć krzywą postępów.</p>
+            </div>
+        </div>
+
+        <!-- HISTORIA POMIARÓW -->
+        <div class="card">
+            <h3 style="margin-top: 0; font-size: 14px; color: var(--text-muted); text-transform: uppercase;">Historia Pomiarów</h3>
+            
+            <div class="history-list">
+                <!-- Przykładowy pusty stan -->
+                <div class="history-item" style="justify-content: center; opacity: 0.5;">
+                    <span style="font-size: 13px;">Jeszcze nic tu nie ma. Kliknij "Dodaj pomiar" u góry.</span>
+                </div>
+                
+                <!-- Przykładowy ukryty wpis (odkomentuj, by zobaczyć jak wygląda) -->
+                <!--
+                <div class="history-item">
+                    <div>
+                        <div class="history-date">Dzisiaj, 10:00</div>
+                        <div style="font-weight: bold; color: var(--accent-color);">Wpis początkowy</div>
+                    </div>
+                    <div class="history-data">
+                        <div class="data-point">
+                            <span class="data-label">Waga</span>
+                            <span class="data-value">80.5 kg</span>
+                        </div>
+                        <div class="data-point">
+                            <span class="data-label">Talia</span>
+                            <span class="data-value">85 cm</span>
+                        </div>
+                    </div>
+                </div>
+                -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- DOLNA NAWIGACJA -->
+    <nav class="mobile-nav">
+        <a href="index.html"><span class="icon">🏠</span><span>Pulpit</span></a>
+        <a href="dieta.html"><span class="icon">🍴</span><span>Dieta</span></a>
+        <a href="trening.html"><span class="icon">🏋️</span><span>Trening</span></a>
+        <a href="postepy.html" class="active"><span class="icon">📈</span><span>Postępy</span></a>
+        <a href="kalkulator.html"><span class="icon">🧮</span><span>Kalkulator</span></a>
+    </nav>
+
+</body>
+</html>
