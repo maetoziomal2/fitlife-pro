@@ -177,7 +177,6 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Zmienne, żeby łatwo zaktualizować wodę
         let currentDailyId = 1;
         let currentWater = 0;
 
@@ -188,7 +187,26 @@
             if (!daily) daily = { id: 1, calories_consumed: 0, protein_consumed: 0, fats_consumed: 0, carbs_consumed: 0, water_consumed: 0.0 };
             if (!goals) goals = { name: 'Wojowniku', target_kcal: 2500, target_protein: 160, target_fats: 80, target_carbs: 280, target_water: 2.5 };
 
-            // Zapisujemy wodę do zmiennych, żeby móc do nich dodawać
+            // --- NOWOŚĆ: SPRAWDZANIE DATY I ZEROWANIE DNIA ---
+            const d = new Date();
+            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; // Daje format np. 2024-03-15
+
+            if (daily.last_updated !== today) {
+                // Mamy nowy dzień! Zerujemy wyniki
+                const resetData = {
+                    calories_consumed: 0,
+                    protein_consumed: 0,
+                    fats_consumed: 0,
+                    carbs_consumed: 0,
+                    water_consumed: 0,
+                    last_updated: today
+                };
+                
+                await supabaseClient.from('daily_stats').update(resetData).eq('id', daily.id);
+                daily = { ...daily, ...resetData }; // Aktualizujemy dane w pamięci strony
+            }
+            // -------------------------------------------------
+
             currentDailyId = daily.id;
             currentWater = parseFloat(daily.water_consumed) || 0;
 
@@ -198,7 +216,6 @@
             document.getElementById('fats-value').innerText = `${daily.fats_consumed || 0} / ${goals.target_fats}`;
             document.getElementById('carbs-value').innerText = `${daily.carbs_consumed || 0} / ${goals.target_carbs}`;
             
-            // Formatujemy wodę, żeby miała ładne zera (np. 1.50 L)
             document.getElementById('water-value').innerText = `${currentWater.toFixed(2)} / ${goals.target_water} L`;
             
             let waterPercent = (currentWater / goals.target_water) * 100;
@@ -208,23 +225,10 @@
             document.getElementById('water-progress').style.width = waterPercent + '%';
         }
 
-        // NOWA FUNKCJA DO KLIKANIA WODY
         async function addWater(amount) {
-            // Dodajemy wartość i naprawiamy dziwne ułamki (np. 0.25 + 0.25) za pomocą toFixed(2)
             const newWaterAmount = parseFloat((currentWater + amount).toFixed(2)); 
-
-            const { error } = await supabaseClient
-                .from('daily_stats')
-                .update({ water_consumed: newWaterAmount })
-                .eq('id', currentDailyId);
-
-            if (!error) {
-                // Skoro się zapisało, odświeżamy pulpit żeby pasek podjechał
-                fetchDashboardData(); 
-            } else {
-                console.error("Błąd dodawania wody:", error);
-                alert("Coś poszło nie tak z wodą :(");
-            }
+            const { error } = await supabaseClient.from('daily_stats').update({ water_consumed: newWaterAmount }).eq('id', currentDailyId);
+            if (!error) fetchDashboardData(); 
         }
 
         fetchDashboardData();
