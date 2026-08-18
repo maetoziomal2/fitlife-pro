@@ -156,8 +156,10 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="section-title"><span class="stat-icon">📅</span> DZISIEJSZE POSIŁKI</div>
             </div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🍳</div><div class="item-text"><h4>Śniadanie</h4><p id="dash-Śniadanie">Czeka na posiłek...</p></div></div></div>
+                        <div class="list-item"><div class="item-info"><div class="item-icon">🍳</div><div class="item-text"><h4>Śniadanie</h4><p id="dash-Śniadanie">Czeka na posiłek...</p></div></div></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥪</div><div class="item-text"><h4>II Śniadanie</h4><p id="dash-II-Śniadanie">Czeka na posiłek...</p></div></div></div>
             <div class="list-item"><div class="item-info"><div class="item-icon">🥩</div><div class="item-text"><h4>Obiad</h4><p id="dash-Obiad">Czeka na posiłek...</p></div></div></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥑</div><div class="item-text"><h4>Podwieczorek</h4><p id="dash-Podwieczorek">Czeka na posiłek...</p></div></div></div>
             <div class="list-item"><div class="item-info"><div class="item-icon">🥗</div><div class="item-text"><h4>Kolacja</h4><p id="dash-Kolacja">Czeka na posiłek...</p></div></div></div>
         </div>
 
@@ -303,7 +305,7 @@
             // Posiłki
             const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
             const { data: foodLogs } = await supabaseClient.from('food_log').select('*').gte('created_at', startOfDay.toISOString());
-            const categories = ['Śniadanie', 'Obiad', 'Kolacja'];
+                        const categories = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja'];
             if (foodLogs && foodLogs.length > 0) {
                 categories.forEach(cat => {
                     const mealsInCat = foodLogs.filter(f => f.meal_category === cat);
