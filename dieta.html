@@ -172,31 +172,45 @@
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentDailyStats = {};
-        let activeMealCategory = ""; // Zapamiętuje, do którego posiłku właśnie dodajemy
+        let activeMealCategory = ""; 
 
-        // POBIERANIE WYNIKÓW I LISTY PRODUKTÓW
         async function loadDietData() {
-            // 1. Górny licznik (tak jak było)
             let { data: daily } = await supabaseClient.from('daily_stats').select('*').limit(1).single();
             let { data: goals } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
+            
+            // --- SPRAWDZANIE DATY ---
+            const d = new Date();
+            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            
+            if (daily && daily.last_updated !== today) {
+                const resetData = { calories_consumed: 0, protein_consumed: 0, fats_consumed: 0, carbs_consumed: 0, water_consumed: 0, last_updated: today };
+                await supabaseClient.from('daily_stats').update(resetData).eq('id', daily.id);
+                daily = { ...daily, ...resetData };
+            }
+            // ------------------------
+
             if (daily) currentDailyStats = daily;
             if (!goals) goals = { target_kcal: 2500 };
             document.getElementById('top-kcal-summary').innerText = `${currentDailyStats.calories_consumed || 0} / ${goals.target_kcal} kcal`;
 
-            // 2. NOWOŚĆ: Pobieranie listy jedzenia
-            const { data: foodLogs } = await supabaseClient.from('food_log').select('*');
+            // POBIERANIE JEDZENIA TYLKO Z DZISIAJ (od północy)
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0); 
+            const isoStart = startOfDay.toISOString();
+
+            const { data: foodLogs } = await supabaseClient
+                .from('food_log')
+                .select('*')
+                .gte('created_at', isoStart); // 'gte' oznacza greater than or equal (większe lub równe)
             
-            // Czyszczenie list (żeby się nie dublowały po odświeżeniu)
             const categories = ['Śniadanie', 'II-Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja'];
             categories.forEach(cat => {
                 const el = document.getElementById(`list-${cat}`);
-                if(el) el.innerHTML = '';
+                if(el) el.innerHTML = ''; // Czyszczenie
             });
 
-            // Wrzucanie jedzenia do odpowiednich pudełek
             if (foodLogs) {
                 foodLogs.forEach(food => {
-                    // Zamieniamy spację na myślnik dla ID (np. II Śniadanie -> II-Śniadanie)
                     let safeId = `list-${food.meal_category.replace(' ', '-')}`;
                     const listContainer = document.getElementById(safeId);
                     
@@ -222,26 +236,19 @@
         
         loadDietData();
 
-        // OBSŁUGA OKIENKA (MODALA)
         function openModal(mealName) {
             activeMealCategory = mealName;
             document.getElementById('modal-title').innerText = "Dodaj do: " + mealName;
-            
-            // Czyszczenie po poprzednim
             document.getElementById('add-name').value = '';
             document.getElementById('add-kcal').value = '';
             document.getElementById('add-protein').value = '';
             document.getElementById('add-fats').value = '';
             document.getElementById('add-carbs').value = '';
-            
             document.getElementById('add-modal').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('add-modal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
 
-        // ZAPIS DO BAZY DANYCH
         async function saveFoodToDatabase() {
             const inputName = document.getElementById('add-name').value || "Produkt dodany ręcznie";
             const inputKcal = parseInt(document.getElementById('add-kcal').value) || 0;
@@ -249,23 +256,12 @@
             const inputFats = parseInt(document.getElementById('add-fats').value) || 0;
             const inputCarbs = parseInt(document.getElementById('add-carbs').value) || 0;
 
-            // KROK A: Zapisz produkt do nowej tabeli "food_log"
             const { error: logError } = await supabaseClient.from('food_log').insert([{
-                meal_category: activeMealCategory,
-                food_name: inputName,
-                kcal: inputKcal,
-                protein: inputProtein,
-                fats: inputFats,
-                carbs: inputCarbs
+                meal_category: activeMealCategory, food_name: inputName, kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs
             }]);
 
-            if (logError) {
-                console.error("Błąd zapisu na listę:", logError);
-                alert("Wystąpił błąd przy dodawaniu produktu.");
-                return; // Przerwij, jeśli się nie udało
-            }
+            if (logError) return alert("Wystąpił błąd przy dodawaniu produktu.");
 
-            // KROK B: Zaktualizuj licznik główny w "daily_stats" (tak jak robiliśmy wcześniej)
             const updates = {
                 calories_consumed: (currentDailyStats.calories_consumed || 0) + inputKcal,
                 protein_consumed: (currentDailyStats.protein_consumed || 0) + inputProtein,
@@ -274,10 +270,9 @@
             };
 
             await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
-
-            // Jeśli wszystko się udało:
+            
             closeModal(); 
-            loadDietData(); // Odśwież widok strony (zaktualizuje licznik i listę jedzenia)
+            loadDietData(); 
         }
     </script>
 </body>
