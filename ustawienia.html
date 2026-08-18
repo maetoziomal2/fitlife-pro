@@ -152,23 +152,27 @@
         
         loadSettings(); // Odpalamy funkcję na starcie
 
-        // 2. ZAPISYWANIE DANYCH DO BAZY
+        // 2. ZAPISYWANIE DANYCH DO BAZY (wersja poprawiona)
         async function saveSettings() {
+            
+            // Nasz mały pomocnik: jeśli okienko jest puste, daj 'null'
+            const getVal = (id) => document.getElementById(id).value === "" ? null : document.getElementById(id).value;
+
             // Zbieramy dane z okienek
             const updates = {
                 id: 1,
-                name: document.getElementById('set-name').value,
-                start_weight: document.getElementById('set-start-weight').value,
-                target_weight: document.getElementById('set-target-weight').value,
-                target_kcal: document.getElementById('set-kcal').value,
-                target_protein: document.getElementById('set-protein').value,
-                target_fats: document.getElementById('set-fats').value,
-                target_carbs: document.getElementById('set-carbs').value,
-                target_water: document.getElementById('set-water').value,
-                target_steps: document.getElementById('set-steps').value
+                name: document.getElementById('set-name').value || 'Użytkownik', // Jak brak imienia, daj 'Użytkownik'
+                start_weight: getVal('set-start-weight'),
+                target_weight: getVal('set-target-weight'),
+                target_kcal: getVal('set-kcal'),
+                target_protein: getVal('set-protein'),
+                target_fats: getVal('set-fats'),
+                target_carbs: getVal('set-carbs'),
+                target_water: getVal('set-water'),
+                target_steps: getVal('set-steps')
             };
 
-            // Wysyłamy update do Supabase (upsert oznacza "zaktualizuj jeśli istnieje")
+            // Wysyłamy do Supabase
             const { error } = await supabaseClient.from('user_settings').upsert(updates);
 
             if (!error) {
