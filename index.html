@@ -8,116 +8,36 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        :root {
-            --bg-color: #050505;
-            --card-bg: #121212;
-            --card-border: #222222;
-            --text-main: #ffffff;
-            --text-muted: #888888;
-            --accent-color: #d4a373;
-            --accent-hover: #b0865c;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-
-        /* === NAWIGACJA GÓRNA === */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0 30px 0;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .logo {
-            color: var(--accent-color);
-            font-size: 22px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        header nav {
-            display: flex;
-            gap: 20px;
-            font-size: 13px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        header nav a {
-            color: var(--text-muted);
-            text-decoration: none;
-            text-transform: uppercase;
-        }
-
+        :root { --bg-color: #050505; --card-bg: #121212; --card-border: #222222; --text-main: #ffffff; --text-muted: #888888; --accent-color: #d4a373; --accent-hover: #b0865c; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0 30px 0; flex-wrap: wrap; gap: 15px; }
+        .logo { color: var(--accent-color); font-size: 22px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        header nav { display: flex; gap: 20px; font-size: 13px; font-weight: bold; letter-spacing: 1px; }
+        header nav a { color: var(--text-muted); text-decoration: none; text-transform: uppercase; }
         header nav a:hover { color: var(--text-main); }
-        header nav a.active {
-            color: var(--accent-color);
-            border-bottom: 2px solid var(--accent-color);
-            padding-bottom: 5px;
-        }
-
-        /* === NAWIGACJA MOBILNA (DOLNA) === */
-        .mobile-nav {
-            display: none; /* Domyślnie ukryta na komputerze */
-            background-color: var(--bg-color);
-            border-top: 1px solid var(--card-border);
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            justify-content: space-around;
-            padding: 10px 0;
-            z-index: 1000;
-        }
-
-        .mobile-nav a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            text-transform: uppercase;
-        }
-
+        header nav a.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); padding-bottom: 5px; }
+        .gear-icon { color: var(--text-muted); font-size: 20px; text-decoration: none; transition: 0.3s; }
+        .gear-icon:hover { color: var(--text-main); }
+        .mobile-nav { display: none; background-color: var(--bg-color); border-top: 1px solid var(--card-border); position: fixed; bottom: 0; left: 0; width: 100%; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .mobile-nav a { color: var(--text-muted); text-decoration: none; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 5px; text-transform: uppercase; }
         .mobile-nav a.active { color: var(--accent-color); }
         .mobile-nav .icon { font-size: 20px; }
-
-        /* === GÓRNA SEKCJA === */
         .top-section { display: grid; grid-template-columns: 1fr 2.5fr; gap: 20px; }
         .card { background-color: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
         .welcome-card { background: linear-gradient(145deg, #1a1a1a, #0a0a0a); }
         .welcome-card h2 { font-size: 32px; margin: 10px 0; line-height: 1.1; }
         .welcome-card p { color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
-
         .btn { background-color: var(--accent-color); color: #000; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; width: max-content; text-transform: uppercase; font-size: 12px; }
         .btn:hover { background-color: var(--accent-hover); }
-        
         .btn-outline { background: transparent; color: var(--accent-color); border: 1px solid var(--accent-color); padding: 8px 15px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .btn-outline:hover { background: var(--accent-color); color: #000; }
-
         .stats-container { display: flex; flex-direction: column; gap: 20px; }
         .stats-row-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
         .stats-row-1 { display: grid; grid-template-columns: 1fr; gap: 20px; }
-
         .stat-header { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
         .stat-icon { color: var(--accent-color); font-size: 16px; }
         .value { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
         .sub-text { color: var(--text-muted); font-size: 11px; }
-
-        /* === DOLNA SEKCJA === */
         .bottom-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
         .section-title { font-size: 14px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--card-border); }
@@ -128,18 +48,7 @@
         .item-text p { margin: 4px 0 0 0; font-size: 11px; color: var(--text-muted); }
         .add-btn { background: none; border: 1px solid var(--text-muted); color: var(--text-muted); border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; }
         .add-btn:hover { border-color: var(--text-main); color: var(--text-main); }
-
-        /* === MEDIA QUERIES (TELEFON) === */
-        @media (max-width: 900px) {
-            body { padding-bottom: 80px; } /* Miejsce na dolne menu */
-            header nav { display: none; } /* Ukrywa górne menu */
-            .mobile-nav { display: flex; } /* Pokazuje dolne menu */
-            
-            .top-section { grid-template-columns: 1fr; }
-            .stats-row-4 { grid-template-columns: repeat(2, 1fr); }
-            .welcome-card h2 { font-size: 26px; }
-            .bottom-section { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } .top-section { grid-template-columns: 1fr; } .stats-row-4 { grid-template-columns: repeat(2, 1fr); } .welcome-card h2 { font-size: 26px; } .bottom-section { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -153,12 +62,13 @@
             <a href="postepy.html">POSTĘPY</a>
             <a href="kalkulator.html">KALKULATOR</a>
         </nav>
-        <a href="ustawienia.html" style="text-decoration: none; color: var(--text-muted); font-size: 20px; transition: 0.3s;">⚙</a>
+        <a href="ustawienia.html" class="gear-icon">⚙</a>
     </header>
 
     <main class="top-section">
         <div class="card welcome-card">
-            <div style="font-size: 12px; color: var(--text-muted); letter-spacing: 1px;">WITAJ!</div>
+            <!-- Dodane miejsce na dynamiczne imię (id="welcome-name") -->
+            <div style="font-size: 12px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Witaj, <span id="welcome-name">Wojowniku</span>!</div>
             <h2>TWÓJ PLAN.<br>TWOJE CELE.<br><span style="color: var(--accent-color);">TWOJE WYNIKI.</span></h2>
             <p>Stwórz swój plan diety i treningu dopasowany do Ciebie.</p>
             <button class="btn">USTAW SWOJE CELE</button>
@@ -168,33 +78,34 @@
             <div class="stats-row-4">
                 <div class="card">
                     <div class="stat-header"><span class="stat-icon">🔥</span> KALORIE</div>
-                    <div class="value" id="kcal-value">-- kcal</div>
-                    <div class="sub-text">z zaplanowanych</div>
+                    <div class="value" id="kcal-value">-- / --</div>
+                    <div class="sub-text">kcal zaplanowanych</div>
                 </div>
                 <div class="card">
                     <div class="stat-header"><span class="stat-icon" style="color: #4da6ff;">👤</span> BIAŁKO</div>
-                    <div class="value" id="protein-value">-- g</div>
-                    <div class="sub-text">z zaplanowanych</div>
+                    <div class="value" id="protein-value">-- / --</div>
+                    <div class="sub-text">g zaplanowanych</div>
                 </div>
                 <div class="card">
                     <div class="stat-header"><span class="stat-icon" style="color: #ffcc00;">💧</span> TŁUSZCZE</div>
-                    <div class="value" id="fats-value">-- g</div>
-                    <div class="sub-text">z zaplanowanych</div>
+                    <div class="value" id="fats-value">-- / --</div>
+                    <div class="sub-text">g zaplanowanych</div>
                 </div>
                 <div class="card">
                     <div class="stat-header"><span class="stat-icon" style="color: #66cc66;">🍃</span> WĘGLOWODANY</div>
-                    <div class="value" id="carbs-value">-- g</div>
-                    <div class="sub-text">z zaplanowanych</div>
+                    <div class="value" id="carbs-value">-- / --</div>
+                    <div class="sub-text">g zaplanowanych</div>
                 </div>
             </div>
 
             <div class="stats-row-1">
                 <div class="card">
                     <div class="stat-header"><span class="stat-icon" style="color: #4da6ff;">💧</span> WODA</div>
-                    <div class="value" id="water-value">-- L / 2.5 L</div>
+                    <div class="value" id="water-value">-- / -- L</div>
                     <div class="sub-text">z dziennego celu</div>
                     <div style="width: 100%; height: 4px; background-color: #333; margin-top: 10px; border-radius: 2px;">
-                        <div style="width: 0%; height: 100%; background-color: #4da6ff; border-radius: 2px;"></div>
+                        <!-- Dodane ID do paska postępu (id="water-progress") -->
+                        <div id="water-progress" style="width: 0%; height: 100%; background-color: #4da6ff; border-radius: 2px; transition: width 0.5s ease-in-out;"></div>
                     </div>
                 </div>
             </div>
@@ -205,7 +116,7 @@
         <div class="card" style="justify-content: flex-start;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="section-title"><span class="stat-icon">📅</span> PLAN DIETY</div>
-                <div style="font-size: 12px; color: var(--text-muted);">&lt; Dzień 1 &gt; 📅</div>
+                <div style="font-size: 12px; color: var(--text-muted);">&lt; Dzisiaj &gt; 📅</div>
             </div>
             
             <div class="list-item"><div class="item-info"><div class="item-icon">🍳</div><div class="item-text"><h4>Śniadanie</h4><p>Dodaj posiłek</p></div></div><button class="add-btn">+</button></div>
@@ -245,12 +156,11 @@
             <div class="card">
                 <div class="section-title">KALKULATOR MAKRO</div>
                 <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Oblicz swoje zapotrzebowanie na kalorie i makroskładniki.</p>
-                <button class="btn">PRZEJDŹ DO KALKULATORA</button>
+                <button class="btn" onclick="window.location.href='kalkulator.html'">PRZEJDŹ DO KALKULATORA</button>
             </div>
         </div>
     </section>
 
-    <!-- NAWIGACJA MOBILNA (POKAZUJE SIĘ TYLKO NA TELEFONIE) -->
     <nav class="mobile-nav">
         <a href="index.html" class="active"><span class="icon">🏠</span><span>Pulpit</span></a>
         <a href="dieta.html"><span class="icon">🍴</span><span>Dieta</span></a>
@@ -259,25 +169,43 @@
         <a href="kalkulator.html"><span class="icon">🧮</span><span>Kalkulator</span></a>
     </nav>
 
+    <!-- ZAAWANSOWANY SKRYPT POBIERAJĄCY OBYDWIE TABELE -->
     <script>
         const supabaseUrl = 'https://ttgeuikoyfcgiboajhcf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-        async function fetchStats() {
-            let { data: daily_stats, error } = await supabaseClient.from('daily_stats').select('*').limit(1).single(); 
-            if (error) { console.error('Mamy problem z bazą:', error); return; }
+        async function fetchDashboardData() {
+            // 1. Pobieramy to co zjadłeś dzisiaj
+            let { data: daily, error: err1 } = await supabaseClient.from('daily_stats').select('*').limit(1).single(); 
+            // 2. Pobieramy Twoje cele z ustawień
+            let { data: goals, error: err2 } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
 
-            if (daily_stats) {
-                document.getElementById('kcal-value').innerText = daily_stats.calories_consumed + ' kcal';
-                document.getElementById('protein-value').innerText = daily_stats.protein_consumed + ' g';
-                // Dodane wczytywanie tłuszczy i węgli z bazy:
-                document.getElementById('fats-value').innerText = (daily_stats.fats_consumed || 0) + ' g';
-                document.getElementById('carbs-value').innerText = (daily_stats.carbs_consumed || 0) + ' g';
-                document.getElementById('water-value').innerText = daily_stats.water_consumed + ' L / 2.5 L';
-            }
+            // Zabezpieczenie: Jeśli nie ma danych, podstawiamy puste wartości i domyślne cele
+            if (!daily) daily = { calories_consumed: 0, protein_consumed: 0, fats_consumed: 0, carbs_consumed: 0, water_consumed: 0.0 };
+            if (!goals) goals = { name: 'Wojowniku', target_kcal: 2500, target_protein: 160, target_fats: 80, target_carbs: 280, target_water: 2.5 };
+
+            // 3. Aktualizujemy napis z Imieniem
+            document.getElementById('welcome-name').innerText = goals.name || 'Wojowniku';
+
+            // 4. Sklejamy "Spożyte / Cel" dla poszczególnych kafelków
+            document.getElementById('kcal-value').innerText = `${daily.calories_consumed} / ${goals.target_kcal}`;
+            document.getElementById('protein-value').innerText = `${daily.protein_consumed} / ${goals.target_protein}`;
+            document.getElementById('fats-value').innerText = `${daily.fats_consumed || 0} / ${goals.target_fats}`;
+            document.getElementById('carbs-value').innerText = `${daily.carbs_consumed || 0} / ${goals.target_carbs}`;
+            
+            // 5. Specjalna aktualizacja dla Wody (Litrów i paska postępu)
+            document.getElementById('water-value').innerText = `${daily.water_consumed} / ${goals.target_water} L`;
+            
+            // Obliczamy % paska wody (nie więcej niż 100%)
+            let waterPercent = (daily.water_consumed / goals.target_water) * 100;
+            if (waterPercent > 100) waterPercent = 100;
+            if (isNaN(waterPercent)) waterPercent = 0; // Zabezpieczenie na wypadek dzielenia przez zera
+            
+            document.getElementById('water-progress').style.width = waterPercent + '%';
         }
-        fetchStats();
+
+        fetchDashboardData();
     </script>
 </body>
 </html>
