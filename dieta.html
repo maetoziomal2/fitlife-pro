@@ -5,7 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitPlan - Plan Diety</title>
     
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#d4a373">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <!-- Baza Supabase i Skaner Kodów -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
         :root { --bg-color: #050505; --card-bg: #121212; --card-border: #222222; --text-main: #ffffff; --text-muted: #888888; --accent-color: #d4a373; --accent-hover: #b0865c; }
@@ -62,24 +69,17 @@
         .modal-buttons { display: flex; gap: 10px; }
         .btn-save { background-color: var(--accent-color); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; flex: 1; }
         .btn-cancel { background-color: transparent; color: white; border: 1px solid var(--text-muted); padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; }
+        .btn-scan { background-color: transparent; color: white; border: 1px dashed var(--accent-color); padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; margin-bottom: 15px; font-weight: bold; }
+
+        #qr-reader { width: 100%; display: none; margin-bottom: 15px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
 
         @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } }
 
-        /* --- ANIMACJE PRZEJŚĆ --- */
-        body {
-            animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .page-exit {
-            animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
-        }
-        @keyframes pageFadeIn {
-            0% { opacity: 0; transform: translateY(15px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pageFadeOut {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-15px); }
-        }
+        /* Animacje przejść */
+        body { animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .page-exit { animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important; }
+        @keyframes pageFadeIn { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes pageFadeOut { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-15px); } }
     </style>
 </head>
 <body>
@@ -145,20 +145,28 @@
         <div class="modal-content">
             <h3 id="modal-title">Dodaj do: ...</h3>
             
-            <!-- NOWA SEKCJA: WYBÓR Z ZAPISANYCH -->
+            <!-- SKANER KODÓW -->
+            <button type="button" class="btn-scan" id="scan-btn" onclick="startScanner()">📷 Uruchom Skaner Kodów</button>
+            <div id="qr-reader"></div>
+            
             <div class="input-full">
-                <label style="color: var(--accent-color); font-weight: bold;">🌟 Wybierz ze swoich potraw:</label>
+                <label style="color: var(--accent-color); font-weight: bold;">🌟 Lub wybierz z zapisanych:</label>
                 <select id="saved-meals-select" onchange="fillFromSaved()">
-                    <option value="">-- Wpisz ręcznie poniżej --</option>
-                    <!-- Tu skrypt wrzuci opcje -->
+                    <option value="">-- Wybierz lub wpisz poniżej --</option>
                 </select>
             </div>
             
             <hr style="border: 0; border-top: 1px dashed var(--card-border); margin: 15px 0;">
 
             <div class="input-full">
-                <label>Nazwa (np. Omlet z 3 jaj z boczkiem)</label>
+                <label>Nazwa</label>
                 <input type="text" id="add-name" placeholder="Co zjadasz?">
+            </div>
+
+            <!-- POLE WAGI (Odpowiada za przeliczanie) -->
+            <div class="input-full">
+                <label>Gramatura / Porcja (g)</label>
+                <input type="number" id="add-weight" value="100" placeholder="np. 150" oninput="scaleMacros()">
             </div>
 
             <div class="modal-grid">
@@ -180,10 +188,9 @@
                 </div>
             </div>
 
-            <!-- NOWY CHECKBOX DO ZAPISU -->
             <div class="checkbox-row">
                 <input type="checkbox" id="save-favorite">
-                <label for="save-favorite">Zapisz do "Moich potraw", żebym miał na później!</label>
+                <label for="save-favorite">Zapisz do "Moich potraw" na przyszłość</label>
             </div>
 
             <div class="modal-buttons">
@@ -202,19 +209,32 @@
     </nav>
 
     <script>
+        // Animacje Przejść
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const target = this.getAttribute('href');
+                if(target && target.includes('.html')) {
+                    e.preventDefault();
+                    document.body.classList.add('page-exit');
+                    setTimeout(() => { window.location.href = target; }, 300);
+                }
+            });
+        });
+
         const supabaseUrl = 'https://ttgeuikoyfcgiboajhcf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
         let currentDailyStats = {};
         let activeMealCategory = ""; 
-        let userSavedMeals = []; // Tablica na Twoje własne przepisy
+        let userSavedMeals = []; 
+        let html5QrcodeScanner = null;
+        let baseMacros = null; // Przechowuje wartości pobrane ze skanera dla 100g
 
         async function loadDietData() {
             let { data: daily } = await supabaseClient.from('daily_stats').select('*').limit(1).single();
             let { data: goals } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
             
-            // --- SPRAWDZANIE DATY (Resetowanie) ---
             const d = new Date();
             const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             if (daily && daily.last_updated !== today) {
@@ -227,13 +247,10 @@
             if (!goals) goals = { target_kcal: 2500 };
             document.getElementById('top-kcal-summary').innerText = `${currentDailyStats.calories_consumed || 0} / ${goals.target_kcal} kcal`;
 
-            // --- POBIERANIE TWOJEJ KSIĄŻKI KUCHARSKIEJ ---
             const { data: savedMealsData } = await supabaseClient.from('saved_meals').select('*');
             if (savedMealsData) userSavedMeals = savedMealsData;
 
-            // --- POBIERANIE DZISIEJSZEGO JEDZENIA ---
-            const startOfDay = new Date();
-            startOfDay.setHours(0, 0, 0, 0); 
+            const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0); 
             const isoStart = startOfDay.toISOString();
 
             const { data: foodLogs } = await supabaseClient.from('food_log').select('*').gte('created_at', isoStart);
@@ -266,55 +283,111 @@
                 });
             }
         }
-        
         loadDietData();
+
+        // ====== OBSŁUGA SKANERA ======
+        function startScanner() {
+            document.getElementById('qr-reader').style.display = 'block';
+            document.getElementById('scan-btn').style.display = 'none';
+            
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
+            }
+            html5QrcodeScanner.render(onScanSuccess);
+        }
+
+        async function onScanSuccess(decodedText, decodedResult) {
+            html5QrcodeScanner.clear(); // Wyłącza aparat
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('scan-btn').style.display = 'block';
+            document.getElementById('scan-btn').innerText = "⏳ Pobieranie z bazy...";
+            
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${decodedText}.json`);
+                const data = await res.json();
+                
+                if(data.status === 1 && data.product) {
+                    const p = data.product;
+                    const nut = p.nutriments;
+                    
+                    document.getElementById('add-name').value = p.product_name || "Zeskanowany produkt";
+                    
+                    // Zapisujemy wartości dla 100g (jako baza)
+                    baseMacros = {
+                        kcal: nut['energy-kcal_100g'] || 0,
+                        protein: nut.proteins_100g || 0,
+                        fats: nut.fat_100g || 0,
+                        carbs: nut.carbohydrates_100g || 0
+                    };
+                    
+                    document.getElementById('add-weight').value = 100;
+                    scaleMacros(); // Wylicza wartości i wstawia do okienek
+                    
+                    document.getElementById('scan-btn').innerText = "✅ Znaleziono! Kliknij by skanować kolejny";
+                } else {
+                    alert("Produktu nie ma jeszcze w otwartej bazie.");
+                    document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner Kodów";
+                }
+            } catch (e) {
+                alert("Błąd połączenia z bazą kodów.");
+                document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner Kodów";
+            }
+        }
+
+        // ====== PRZELICZANIE GRAMATURY ======
+        function scaleMacros() {
+            if(!baseMacros) return; // Przeliczamy tylko jak użyto skanera
+            
+            const weight = parseFloat(document.getElementById('add-weight').value) || 0;
+            const ratio = weight / 100;
+            
+            document.getElementById('add-kcal').value = Math.round(baseMacros.kcal * ratio);
+            document.getElementById('add-protein').value = Math.round(baseMacros.protein * ratio);
+            document.getElementById('add-fats').value = Math.round(baseMacros.fats * ratio);
+            document.getElementById('add-carbs').value = Math.round(baseMacros.carbs * ratio);
+        }
 
         function openModal(mealName) {
             activeMealCategory = mealName;
             document.getElementById('modal-title').innerText = "Dodaj do: " + mealName;
             
-            // Czyszczenie pól i odznaczanie checkboxa
+            // Czyszczenie
+            baseMacros = null; 
             document.getElementById('add-name').value = '';
+            document.getElementById('add-weight').value = 100;
             document.getElementById('add-kcal').value = '';
             document.getElementById('add-protein').value = '';
             document.getElementById('add-fats').value = '';
             document.getElementById('add-carbs').value = '';
             document.getElementById('save-favorite').checked = false;
+            document.getElementById('scan-btn').innerText = "📷 Uruchom Skaner Kodów";
+            if (html5QrcodeScanner) html5QrcodeScanner.clear();
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('scan-btn').style.display = 'block';
             
-            // --- BUDOWANIE ROZWIJANEJ LISTY ---
             const selectBox = document.getElementById('saved-meals-select');
-            selectBox.innerHTML = '<option value="">-- Wpisz ręcznie poniżej --</option>'; // Zawsze opcja pusta
-            
-            // Szukamy w bazie tylko posiłków pasujących do kategorii (np. tylko obiadów)
+            selectBox.innerHTML = '<option value="">-- Wybierz lub wpisz poniżej --</option>'; 
             const filteredMeals = userSavedMeals.filter(m => m.meal_category === mealName);
-            
-            filteredMeals.forEach((meal, index) => {
-                // Wrzucamy indeks tablicy do "value", żebyśmy łatwo to potem odnaleźli
-                selectBox.innerHTML += `<option value="${meal.id}">${meal.food_name} (${meal.kcal} kcal)</option>`;
-            });
+            filteredMeals.forEach(meal => { selectBox.innerHTML += `<option value="${meal.id}">${meal.food_name} (${meal.kcal} kcal)</option>`; });
             
             document.getElementById('add-modal').style.display = 'flex';
         }
 
-        function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
+        function closeModal() { 
+            if (html5QrcodeScanner) html5QrcodeScanner.clear();
+            document.getElementById('add-modal').style.display = 'none'; 
+        }
 
-        // --- FUNKCJA AUTOMATYCZNEGO WYPEŁNIANIA PO WYBORZE Z LISTY ---
         function fillFromSaved() {
             const selectedId = document.getElementById('saved-meals-select').value;
+            baseMacros = null; // Resetujemy bazę, bo wczytujemy gotowy posiłek
+            document.getElementById('add-weight').value = 100; // Porcja wczytana z bazy traktowana jest jako cała (100%)
             
-            // Jeśli wybrano "-- Wpisz ręcznie --", wyczyść formularz
             if (!selectedId) {
-                document.getElementById('add-name').value = '';
-                document.getElementById('add-kcal').value = '';
-                document.getElementById('add-protein').value = '';
-                document.getElementById('add-fats').value = '';
-                document.getElementById('add-carbs').value = '';
+                document.getElementById('add-name').value = ''; document.getElementById('add-kcal').value = ''; document.getElementById('add-protein').value = ''; document.getElementById('add-fats').value = ''; document.getElementById('add-carbs').value = '';
                 return;
             }
-
-            // Szukamy posiłku po jego ID w naszej pobranej bazie
             const mealToFill = userSavedMeals.find(m => m.id == selectedId);
-            
             if (mealToFill) {
                 document.getElementById('add-name').value = mealToFill.food_name;
                 document.getElementById('add-kcal').value = mealToFill.kcal;
@@ -325,60 +398,28 @@
         }
 
         async function saveFoodToDatabase() {
-            const inputName = document.getElementById('add-name').value || "Mój posiłek";
+            const inputName = document.getElementById('add-name').value || "Produkt ze skanera";
             const inputKcal = parseInt(document.getElementById('add-kcal').value) || 0;
             const inputProtein = parseInt(document.getElementById('add-protein').value) || 0;
             const inputFats = parseInt(document.getElementById('add-fats').value) || 0;
             const inputCarbs = parseInt(document.getElementById('add-carbs').value) || 0;
             const isFavorite = document.getElementById('save-favorite').checked;
 
-            // 1. Zapis do dziennika (żebyśmy widzieli co zjedliśmy dzisiaj)
-            const { error: logError } = await supabaseClient.from('food_log').insert([{
-                meal_category: activeMealCategory, food_name: inputName, kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs
-            }]);
-            
+            const { error: logError } = await supabaseClient.from('food_log').insert([{ meal_category: activeMealCategory, food_name: inputName, kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs }]);
             if (logError) return alert("Wystąpił błąd przy dodawaniu produktu.");
 
-            // 2. JEŚLI ZAZNACZONO CHECKBOX - Zapisujemy do Książki Kucharskiej
             if (isFavorite) {
-                await supabaseClient.from('saved_meals').insert([{
-                    meal_category: activeMealCategory, food_name: inputName, kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs
-                }]);
+                await supabaseClient.from('saved_meals').insert([{ meal_category: activeMealCategory, food_name: inputName, kcal: inputKcal, protein: inputProtein, fats: inputFats, carbs: inputCarbs }]);
             }
 
-            // 3. Aktualizacja górnego licznika na Pulpit
             const updates = {
-                calories_consumed: (currentDailyStats.calories_consumed || 0) + inputKcal,
-                protein_consumed: (currentDailyStats.protein_consumed || 0) + inputProtein,
-                fats_consumed: (currentDailyStats.fats_consumed || 0) + inputFats,
-                carbs_consumed: (currentDailyStats.carbs_consumed || 0) + inputCarbs
+                calories_consumed: (currentDailyStats.calories_consumed || 0) + inputKcal, protein_consumed: (currentDailyStats.protein_consumed || 0) + inputProtein, fats_consumed: (currentDailyStats.fats_consumed || 0) + inputFats, carbs_consumed: (currentDailyStats.carbs_consumed || 0) + inputCarbs
             };
 
             await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
             
-            closeModal(); 
-            loadDietData(); 
+            closeModal(); loadDietData(); 
         }
-
-        // --- PŁYNNE PRZEJŚCIA MIĘDZY KARTAMI ---
-        document.querySelectorAll('nav a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                const target = this.getAttribute('href');
-                
-                // Jeśli link prowadzi do innej zakładki (pliku .html)
-                if(target && target.includes('.html')) {
-                    e.preventDefault(); // Zatrzymujemy natychmiastowy przeskok
-                    
-                    // Odpalamy animację wyjścia
-                    document.body.classList.add('page-exit');
-                    
-                    // Czekamy 300 milisekund i dopiero wtedy zmieniamy stronę
-                    setTimeout(() => {
-                        window.location.href = target;
-                    }, 300);
-                }
-            });
-        });
     </script>
 </body>
 </html>
