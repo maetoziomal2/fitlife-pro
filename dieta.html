@@ -207,7 +207,7 @@
             document.getElementById('add-modal').style.display = 'none';
         }
 
-        // 3. DODAWANIE JEDZENIA DO BAZY
+        // 3. DODAWANIE JEDZENIA DO BAZY (Wersja poprawiona)
         async function saveFoodToDatabase() {
             // Pobieramy wpisane wartości (jeśli puste, traktujemy jako 0)
             const inputKcal = parseInt(document.getElementById('add-kcal').value) || 0;
@@ -215,25 +215,34 @@
             const inputFats = parseInt(document.getElementById('add-fats').value) || 0;
             const inputCarbs = parseInt(document.getElementById('add-carbs').value) || 0;
 
-            // Dodajemy nowe wartości do starych wartości (wyciągniętych wcześniej z bazy)
+            // Zauważ: nie wysyłamy już "id", tylko same makroskładniki!
             const updates = {
-                id: currentDailyStats.id || 1, // Zakładamy, że pracujemy na wierszu nr 1
                 calories_consumed: (currentDailyStats.calories_consumed || 0) + inputKcal,
                 protein_consumed: (currentDailyStats.protein_consumed || 0) + inputProtein,
                 fats_consumed: (currentDailyStats.fats_consumed || 0) + inputFats,
                 carbs_consumed: (currentDailyStats.carbs_consumed || 0) + inputCarbs
             };
 
-            // Zapisujemy nowe sumy do Supabase
-            const { error } = await supabaseClient.from('daily_stats').upsert(updates);
+            // Używamy .update() zamiast .upsert() i mówimy, żeby zaktualizował wiersz o konkretnym ID
+            const { error } = await supabaseClient
+                .from('daily_stats')
+                .update(updates)
+                .eq('id', currentDailyStats.id);
 
             if (!error) {
                 closeModal(); // Zamykamy okienko
+                
+                // Aktualizujemy naszą lokalną zmienną, żeby kolejne dodanie w tym samym oknie działało dobrze
+                currentDailyStats.calories_consumed = updates.calories_consumed;
+                currentDailyStats.protein_consumed = updates.protein_consumed;
+                currentDailyStats.fats_consumed = updates.fats_consumed;
+                currentDailyStats.carbs_consumed = updates.carbs_consumed;
+                
                 loadDietSummary(); // Odświeżamy wynik u góry strony
                 alert("Dodano pomyślnie! Zobacz zmiany na Pulpicie.");
             } else {
-                console.error(error);
-                alert("Wystąpił błąd przy zapisie.");
+                console.error("Błąd bazy:", error);
+                alert("Wystąpił błąd przy zapisie. Sprawdź konsolę.");
             }
         }
     </script>
