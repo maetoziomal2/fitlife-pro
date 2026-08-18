@@ -266,7 +266,7 @@
                     let safeId = `list-${food.meal_category.replace(' ', '-')}`;
                     const listContainer = document.getElementById(safeId);
                     if (listContainer) {
-                        const html = `
+                                                const html = `
                         <div class="food-item">
                             <div>
                                 <div class="food-name">${food.food_name || 'Brak nazwy'}</div>
@@ -276,7 +276,10 @@
                                     <span style="color: #66cc66">W: ${food.carbs}g</span>
                                 </div>
                             </div>
-                            <div class="food-kcal">${food.kcal} kcal</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="food-kcal">${food.kcal} kcal</div>
+                                <button onclick="deleteFood('${food.id}', ${food.kcal}, ${food.protein}, ${food.fats}, ${food.carbs})" style="background: none; border: none; font-size: 16px; cursor: pointer; padding: 5px; opacity: 0.7; transition: 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">🗑️</button>
+                            </div>
                         </div>`;
                         listContainer.innerHTML += html;
                     }
@@ -419,6 +422,33 @@
             await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
             
             closeModal(); loadDietData(); 
+        }
+        
+                // ====== USUWANIE PRODUKTU ======
+        async function deleteFood(foodId, kcal, protein, fats, carbs) {
+            // Pytamy o potwierdzenie (żeby uniknąć przypadkowych kliknięć)
+            if (!confirm("Na pewno chcesz usunąć ten produkt z posiłku?")) return;
+
+            // 1. Usuwamy wpis z historii jedzenia
+            const { error: deleteError } = await supabaseClient.from('food_log').delete().eq('id', foodId);
+            
+            if (deleteError) {
+                alert("Wystąpił błąd podczas usuwania.");
+                return;
+            }
+
+            // 2. Odejmujemy makro od dzisiejszych statystyk (zabezpieczenie Math.max przed ujemnymi wartościami)
+            const updates = {
+                calories_consumed: Math.max(0, (currentDailyStats.calories_consumed || 0) - kcal),
+                protein_consumed: Math.max(0, (currentDailyStats.protein_consumed || 0) - protein),
+                fats_consumed: Math.max(0, (currentDailyStats.fats_consumed || 0) - fats),
+                carbs_consumed: Math.max(0, (currentDailyStats.carbs_consumed || 0) - carbs)
+            };
+
+            await supabaseClient.from('daily_stats').update(updates).eq('id', currentDailyStats.id || 1);
+
+            // 3. Odświeżamy listę, żeby produkt zniknął z ekranu
+            loadDietData(); 
         }
     </script>
 </body>
