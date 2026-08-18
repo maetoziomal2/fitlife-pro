@@ -104,9 +104,37 @@
 
     </main>
 
-    <script>
-        // Tutaj wkrótce wpiszemy kod łączący nas z Supabase!
-        console.log("Strona załadowana pomyślnie. Czekamy na klucze Supabase.");
+        <script>
+        // 1. Inicjalizacja połączenia
+        const supabaseUrl = 'https://ttgeuikoyfcgiboajhcf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 2. Funkcja pobierająca dane
+        async function fetchStats() {
+            console.log("Próbuję pobrać dane...");
+            
+            let { data: daily_stats, error } = await supabase
+                .from('daily_stats')
+                .select('*')
+                .limit(1)
+                .single(); // Pobieramy jeden (nasz pusty) wiersz
+
+            if (error) {
+                console.error('Mamy problem:', error);
+                return;
+            }
+
+            // 3. Jeśli są dane, wklejamy je na stronę
+            if (daily_stats) {
+                document.getElementById('kcal-value').innerText = daily_stats.calories_consumed + ' kcal';
+                document.getElementById('protein-value').innerText = daily_stats.protein_consumed + ' g';
+                document.getElementById('water-value').innerText = daily_stats.water_consumed + ' L / 2.5 L';
+            }
+        }
+
+        // 4. Uruchamiamy funkcję
+        fetchStats();
     </script>
 
 </body>
