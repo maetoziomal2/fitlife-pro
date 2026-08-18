@@ -3,218 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fit Month Planner</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Supabase JS -->
+    <title>FitPlan - Twój Pulpit</title>
+    
+    <!-- Biblioteka Supabase do komunikacji z bazą -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        /* Główne kolory i styl całej strony */
+        :root {
+            --bg-color: #0d0d0d;
+            --card-bg: #1a1a1a;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --accent-color: #d4a373; /* Złoty kolor z logo */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Pasek nawigacji */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            color: var(--accent-color);
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        /* Układ siatki dla kafelków (Grid) */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        /* Wygląd pojedynczego kafelka */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans antialiased">
+<body>
 
-    <!-- Nawigacja -->
-    <nav class="bg-blue-600 text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <div class="text-2xl font-bold">FitPlanner</div>
-                <div class="flex space-x-4">
-                    <button onclick="switchTab('dashboard')" class="hover:text-blue-200 font-semibold">Dashboard</button>
-                    <button onclick="switchTab('dieta')" class="hover:text-blue-200 font-semibold">Dieta</button>
-                    <button onclick="switchTab('trening')" class="hover:text-blue-200 font-semibold">Trening</button>
-                </div>
-            </div>
+    <header>
+        <div class="logo">||= FITPLAN</div>
+        <nav>
+            <span style="color: var(--accent-color); margin-right: 15px;">PULPIT</span>
+            <span style="color: var(--text-muted);">DIETA</span>
+        </nav>
+    </header>
+
+    <!-- Tutaj będą nasze puste kafelki czekające na dane z Supabase -->
+    <main class="dashboard-grid">
+        
+        <div class="card">
+            <h3>Kalorie</h3>
+            <div class="value" id="kcal-value">-- kcal</div>
+            <div style="color: var(--text-muted); font-size: 12px;">z zaplanowanych</div>
         </div>
-    </nav>
 
-    <!-- Główny kontener -->
-    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="card">
+            <h3>Białko</h3>
+            <div class="value" id="protein-value">-- g</div>
+            <div style="color: var(--text-muted); font-size: 12px;">z zaplanowanych</div>
+        </div>
 
-        <!-- DASHBOARD -->
-        <section id="dashboard" class="tab-content active">
-            <h2 class="text-3xl font-bold mb-6 text-gray-700">Twój Dashboard</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                
-                <!-- Wykres Makro -->
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-xl font-semibold mb-4 text-center">Makroskładniki (Dzisiaj)</h3>
-                    <canvas id="macroChart"></canvas>
-                </div>
-
-                <!-- Wykres Wody -->
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-xl font-semibold mb-4 text-center">Spożycie Wody (Ostatnie 7 dni)</h3>
-                    <canvas id="waterChart"></canvas>
-                </div>
-
-                <!-- Podsumowanie -->
-                <div class="bg-white p-6 rounded-lg shadow-md flex flex-col justify-center">
-                    <h3 class="text-xl font-semibold mb-4">Szybkie statystyki</h3>
-                    <ul class="space-y-4 text-lg">
-                        <li class="flex justify-between border-b pb-2"><span>Zjedzone kcal:</span> <span class="font-bold text-blue-600">1850 / 2500</span></li>
-                        <li class="flex justify-between border-b pb-2"><span>Treningi w tym m-cu:</span> <span class="font-bold text-green-600">12</span></li>
-                        <li class="flex justify-between border-b pb-2"><span>Wypita woda:</span> <span class="font-bold text-blue-400">2.5 L</span></li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-
-        <!-- KALENDARZ DIETY -->
-        <section id="dieta" class="tab-content">
-            <h2 class="text-3xl font-bold mb-6 text-gray-700">Kalendarz Diety</h2>
-            
-            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-4">Dodaj Posiłek</h3>
-                <form id="dietForm" class="grid grid-cols-1 md:grid-cols-6 gap-4">
-                    <input type="date" id="dietDate" class="border p-2 rounded" required>
-                    <input type="text" id="mealName" placeholder="Nazwa posiłku" class="border p-2 rounded col-span-2" required>
-                    <input type="number" id="mealKcal" placeholder="Kcal" class="border p-2 rounded" required>
-                    <input type="number" id="mealProtein" placeholder="Białko (g)" class="border p-2 rounded">
-                    <button type="submit" class="bg-green-500 text-white font-bold p-2 rounded hover:bg-green-600">Dodaj</button>
-                </form>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-xl font-semibold mb-4">Lista posiłków</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="p-3 border-b">Data</th>
-                                <th class="p-3 border-b">Posiłek</th>
-                                <th class="p-3 border-b">Kcal</th>
-                                <th class="p-3 border-b">Białko</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dietTableBody">
-                            <!-- Dane z Supabase -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- KALENDARZ TRENINGÓW -->
-        <section id="trening" class="tab-content">
-            <h2 class="text-3xl font-bold mb-6 text-gray-700">Kalendarz Treningów</h2>
-            
-            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                <h3 class="text-xl font-semibold mb-4">Zaplanuj Trening</h3>
-                <form id="workoutForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <input type="date" id="workoutDate" class="border p-2 rounded" required>
-                    <input type="text" id="exerciseName" placeholder="Ćwiczenie / Plan" class="border p-2 rounded col-span-2" required>
-                    <input type="text" id="workoutDetails" placeholder="Serie x Powt. (np. 4x10)" class="border p-2 rounded">
-                    <button type="submit" class="bg-blue-600 text-white font-bold p-2 rounded hover:bg-blue-700">Dodaj</button>
-                </form>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-7 gap-4" id="workoutCalendarGrid">
-                <!-- Prosta wizualizacja kalendarza zostanie wygenerowana w JS -->
-            </div>
-        </section>
+        <div class="card">
+            <h3>Woda</h3>
+            <div class="value" id="water-value">-- L / -- L</div>
+            <div style="color: var(--text-muted); font-size: 12px;">z dziennego celu</div>
+        </div>
 
     </main>
 
     <script>
-        // --- 1. KONFIGURACJA SUPABASE ---
-        // PAMIĘTAJ: Zmień te dane na swoje z panelu Supabase (Project Settings -> API)
-        const SUPABASE_URL = 'https://twoj-projekt.supabase.co';
-        const SUPABASE_ANON_KEY = 'twoj-anon-key';
-        
-        // Inicjalizacja (zakomentowana, żeby uniknąć błędów w konsoli przed wpisaniem poprawnych kluczy)
-        // const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // --- 2. LOGIKA ZAKŁADEK ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.getElementById(tabId).classList.add('active');
-        }
-
-        // --- 3. WYKRESY (Chart.js) ---
-        // Wykres Makroskładników (Kołowy)
-        const ctxMacro = document.getElementById('macroChart').getContext('2d');
-        new Chart(ctxMacro, {
-            type: 'doughnut',
-            data: {
-                labels: ['Białko', 'Węglowodany', 'Tłuszcze'],
-                datasets: [{
-                    data: [150, 200, 70], // Przykładowe dane w gramach
-                    backgroundColor: ['#ef4444', '#3b82f6', '#eab308']
-                }]
-            }
-        });
-
-        // Wykres Wody (Słupkowy)
-        const ctxWater = document.getElementById('waterChart').getContext('2d');
-        new Chart(ctxWater, {
-            type: 'bar',
-            data: {
-                labels: ['Pon', 'Wto', 'Śro', 'Czw', 'Pią', 'Sob', 'Nie'],
-                datasets: [{
-                    label: 'Litry',
-                    data: [2, 2.5, 1.8, 3, 2.2, 2.8, 2.5],
-                    backgroundColor: '#38bdf8'
-                }]
-            },
-            options: { scales: { y: { beginAtZero: true } } }
-        });
-
-        // --- 4. OBSŁUGA FORMULARZY I SUPABASE (Szablon) ---
-
-        // Dieta
-        document.getElementById('dietForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const date = document.getElementById('dietDate').value;
-            const name = document.getElementById('mealName').value;
-            const kcal = document.getElementById('mealKcal').value;
-            const protein = document.getElementById('mealProtein').value;
-
-            /* LOGIKA SUPABASE - ODKOMENTUJ PO SKONFIGUROWANIU BAZY
-            const { data, error } = await supabase
-                .from('dieta')
-                .insert([{ data: date, nazwa: name, kcal: kcal, bialko: protein }]);
-            
-            if(!error) loadDiet();
-            */
-            
-            // Tymczasowy kod pokazujący działanie UI
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td class="p-3 border-b">${date}</td><td class="p-3 border-b">${name}</td><td class="p-3 border-b">${kcal}</td><td class="p-3 border-b">${protein}g</td>`;
-            document.getElementById('dietTableBody').appendChild(tr);
-            e.target.reset();
-        });
-
-        // Trening (Generowanie prostych kafelków na siatce)
-        document.getElementById('workoutForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const date = document.getElementById('workoutDate').value;
-            const exercise = document.getElementById('exerciseName').value;
-            const details = document.getElementById('workoutDetails').value;
-
-            /* LOGIKA SUPABASE - ODKOMENTUJ PO SKONFIGUROWANIU BAZY
-            const { data, error } = await supabase
-                .from('treningi')
-                .insert([{ data: date, cwiczenie: exercise, detale: details }]);
-            */
-
-            const grid = document.getElementById('workoutCalendarGrid');
-            const card = document.createElement('div');
-            card.className = "bg-blue-50 p-4 rounded border-l-4 border-blue-500 shadow-sm";
-            card.innerHTML = `<div class="text-sm text-gray-500 mb-1">${date}</div><div class="font-bold text-lg">${exercise}</div><div class="text-sm">${details}</div>`;
-            grid.appendChild(card);
-            e.target.reset();
-        });
-
-        // Ustaw dzisiejsze daty domyślnie
-        document.getElementById('dietDate').valueAsDate = new Date();
-        document.getElementById('workoutDate').valueAsDate = new Date();
-
+        // Tutaj wkrótce wpiszemy kod łączący nas z Supabase!
+        console.log("Strona załadowana pomyślnie. Czekamy na klucze Supabase.");
     </script>
+
 </body>
 </html>
