@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitPlan - Twój Pulpit</title>
+    
+    <!-- PWA dla iPhone i Androida -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#d4a373">
     <link rel="apple-touch-icon" href="icon.png">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -51,22 +53,14 @@
         .item-text p { margin: 4px 0 0 0; font-size: 11px; color: var(--text-muted); }
         .add-btn { background: none; border: 1px solid var(--text-muted); color: var(--text-muted); border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 16px; }
         .add-btn:hover { border-color: var(--text-main); color: var(--text-main); }
+        
         @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } .top-section { grid-template-columns: 1fr; } .stats-row-4 { grid-template-columns: repeat(2, 1fr); } .welcome-card h2 { font-size: 26px; } .bottom-section { grid-template-columns: 1fr; } }
-    /* --- ANIMACJE PRZEJŚĆ --- */
-        body {
-            animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .page-exit {
-            animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
-        }
-        @keyframes pageFadeIn {
-            0% { opacity: 0; transform: translateY(15px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pageFadeOut {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-15px); }
-        }
+
+        /* --- PŁYNNE ANIMACJE --- */
+        body { animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .page-exit { animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important; }
+        @keyframes pageFadeIn { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes pageFadeOut { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-15px); } }
     </style>
 </head>
 <body>
@@ -87,8 +81,8 @@
         <div class="card welcome-card">
             <div style="font-size: 12px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Witaj, <span id="welcome-name">Wojowniku</span>!</div>
             <h2>TWÓJ PLAN.<br>TWOJE CELE.<br><span style="color: var(--accent-color);">TWOJE WYNIKI.</span></h2>
-            <p>Stwórz swój plan diety i treningu dopasowany do Ciebie.</p>
-            <button class="btn" onclick="window.location.href='ustawienia.html'">USTAW SWOJE CELE</button>
+            <p>Sprawdź podsumowanie swojego dzisiejszego dnia poniżej.</p>
+            <button class="btn" onclick="window.location.href='ustawienia.html'">ZOBACZ SWOJE CELE</button>
         </div>
 
         <div class="stats-container">
@@ -117,7 +111,6 @@
 
             <div class="stats-row-1">
                 <div class="card">
-                    <!-- DODANY PRZYCISK +250ml W NAGŁÓWKU KAFELKA -->
                     <div class="stat-header" style="justify-content: space-between;">
                         <div><span class="stat-icon" style="color: #4da6ff;">💧</span> WODA</div>
                         <button class="btn-outline" style="padding: 4px 10px; border-color: #4da6ff; color: #4da6ff;" onclick="addWater(0.25)">+ 250 ml</button>
@@ -134,49 +127,48 @@
     </main>
 
     <section class="bottom-section">
+        <!-- SEKCJA DIETA -->
         <div class="card" style="justify-content: flex-start;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="section-title"><span class="stat-icon">📅</span> PLAN DIETY</div>
-                <div style="font-size: 12px; color: var(--text-muted);">&lt; Dzisiaj &gt; 📅</div>
+                <div class="section-title"><span class="stat-icon">📅</span> DZISIEJSZE POSIŁKI</div>
+                <button class="btn-outline" onclick="window.location.href='dieta.html'" style="padding: 4px 10px;">DODAJ</button>
             </div>
             
-            <div class="list-item"><div class="item-info"><div class="item-icon">🍳</div><div class="item-text"><h4>Śniadanie</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🥪</div><div class="item-text"><h4>II śniadanie</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🥩</div><div class="item-text"><h4>Obiad</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🥑</div><div class="item-text"><h4>Podwieczorek</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-icon">🥗</div><div class="item-text"><h4>Kolacja</h4><p>Dodaj posiłek</p></div></div><button class="add-btn" onclick="window.location.href='dieta.html'">+</button></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🍳</div><div class="item-text"><h4>Śniadanie</h4><p id="dash-Śniadanie">Czeka na posiłek...</p></div></div></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥪</div><div class="item-text"><h4>II Śniadanie</h4><p id="dash-II-Śniadanie">Czeka na posiłek...</p></div></div></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥩</div><div class="item-text"><h4>Obiad</h4><p id="dash-Obiad">Czeka na posiłek...</p></div></div></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥑</div><div class="item-text"><h4>Podwieczorek</h4><p id="dash-Podwieczorek">Czeka na posiłek...</p></div></div></div>
+            <div class="list-item"><div class="item-info"><div class="item-icon">🥗</div><div class="item-text"><h4>Kolacja</h4><p id="dash-Kolacja">Czeka na posiłek...</p></div></div></div>
         </div>
 
+        <!-- SEKCJA TRENING -->
         <div class="card" style="justify-content: flex-start;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <div class="section-title" style="margin-bottom: 0;"><span class="stat-icon">💪</span> PLAN TRENINGOWY</div>
-                <button class="btn-outline" onclick="window.location.href='trening.html'">ZOBACZ KALENDARZ</button>
+                <div class="section-title" style="margin-bottom: 0;"><span class="stat-icon">💪</span> TWÓJ TRENING (DZIŚ)</div>
+                <button class="btn-outline" onclick="window.location.href='trening.html'">KALENDARZ</button>
             </div>
-            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">&#709; Tydzień 1 <span style="float: right;">&lt; - / - &gt;</span></div>
-
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Poniedziałek</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Wtorek</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Środa</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Czwartek</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
-            <div class="list-item"><div class="item-info"><div class="item-text"><h4>Piątek</h4><p>Dodaj trening</p></div></div><button class="add-btn" onclick="window.location.href='trening.html'">+</button></div>
+            
+            <div id="dash-workout-list">
+                <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px 0;">Sprawdzanie planu...</div>
+            </div>
         </div>
 
+        <!-- SEKCJA POSTĘPY I KALKULATOR -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
-            <div class="card" style="flex: 1; text-align: center;">
+            <div class="card" style="flex: 1; text-align: center;" id="dash-progress-card">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="section-title" style="margin-bottom: 0;"><span class="stat-icon">📈</span> POSTĘPY</div>
-                    <button class="btn-outline" onclick="window.location.href='postepy.html'">DODAJ POMIAR</button>
+                    <button class="btn-outline" onclick="window.location.href='postepy.html'">DODAJ WAGĘ</button>
                 </div>
                 <div style="margin-top: 30px; color: var(--text-muted);">
                     <div style="font-size: 30px; margin-bottom: 10px;">📉</div>
-                    <h4 style="margin: 0; color: var(--text-main);">Brak danych</h4>
-                    <p style="font-size: 12px;">Dodaj swój pierwszy pomiar,<br>aby zobaczyć postępy.</p>
+                    <h4 style="margin: 0; color: var(--text-main);">Szukam danych...</h4>
                 </div>
             </div>
 
             <div class="card">
                 <div class="section-title">KALKULATOR MAKRO</div>
-                <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Oblicz swoje zapotrzebowanie na kalorie i makroskładniki.</p>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 0;">Oblicz swoje zapotrzebowanie na cel.</p>
                 <button class="btn" onclick="window.location.href='kalkulator.html'">PRZEJDŹ DO KALKULATORA</button>
             </div>
         </div>
@@ -191,6 +183,22 @@
     </nav>
 
     <script>
+        // PWA - Service Worker
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+        // Przejścia między zakładkami
+        document.querySelectorAll('nav a, .btn-outline, .btn').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const target = this.getAttribute('onclick') ? this.getAttribute('onclick').match(/'([^']+)'/)[1] : this.getAttribute('href');
+                if(target && target.includes('.html') && target !== 'index.html') {
+                    e.preventDefault();
+                    document.body.classList.add('page-exit');
+                    setTimeout(() => { window.location.href = target; }, 300);
+                }
+            });
+        });
+
+        // Supabase Konfiguracja
         const supabaseUrl = 'https://ttgeuikoyfcgiboajhcf.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0Z2V1aWtveWZjZ2lib2FqaGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NzQwODQsImV4cCI6MjEwMjU1MDA4NH0.bdBemCIUCBkbrJx2h9iN44OuQIAmeGkTTQjwRMev-G4';
         const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
@@ -199,31 +207,21 @@
         let currentWater = 0;
 
         async function fetchDashboardData() {
+            // 1. POBIERANIE WODY I KALORII (Tak jak było)
             let { data: daily } = await supabaseClient.from('daily_stats').select('*').limit(1).single(); 
             let { data: goals } = await supabaseClient.from('user_settings').select('*').eq('id', 1).single();
 
+            const d = new Date();
+            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; 
+
+            if (daily && daily.last_updated !== today) {
+                const resetData = { calories_consumed: 0, protein_consumed: 0, fats_consumed: 0, carbs_consumed: 0, water_consumed: 0, last_updated: today };
+                await supabaseClient.from('daily_stats').update(resetData).eq('id', daily.id);
+                daily = { ...daily, ...resetData }; 
+            }
+
             if (!daily) daily = { id: 1, calories_consumed: 0, protein_consumed: 0, fats_consumed: 0, carbs_consumed: 0, water_consumed: 0.0 };
             if (!goals) goals = { name: 'Wojowniku', target_kcal: 2500, target_protein: 160, target_fats: 80, target_carbs: 280, target_water: 2.5 };
-
-            // --- NOWOŚĆ: SPRAWDZANIE DATY I ZEROWANIE DNIA ---
-            const d = new Date();
-            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; // Daje format np. 2024-03-15
-
-            if (daily.last_updated !== today) {
-                // Mamy nowy dzień! Zerujemy wyniki
-                const resetData = {
-                    calories_consumed: 0,
-                    protein_consumed: 0,
-                    fats_consumed: 0,
-                    carbs_consumed: 0,
-                    water_consumed: 0,
-                    last_updated: today
-                };
-                
-                await supabaseClient.from('daily_stats').update(resetData).eq('id', daily.id);
-                daily = { ...daily, ...resetData }; // Aktualizujemy dane w pamięci strony
-            }
-            // -------------------------------------------------
 
             currentDailyId = daily.id;
             currentWater = parseFloat(daily.water_consumed) || 0;
@@ -235,12 +233,74 @@
             document.getElementById('carbs-value').innerText = `${daily.carbs_consumed || 0} / ${goals.target_carbs}`;
             
             document.getElementById('water-value').innerText = `${currentWater.toFixed(2)} / ${goals.target_water} L`;
-            
             let waterPercent = (currentWater / goals.target_water) * 100;
-            if (waterPercent > 100) waterPercent = 100;
-            if (isNaN(waterPercent)) waterPercent = 0; 
+            document.getElementById('water-progress').style.width = (waterPercent > 100 ? 100 : (isNaN(waterPercent) ? 0 : waterPercent)) + '%';
+
+
+            // ==========================================
+            // 2. NOWE: POBIERANIE DZISIEJSZEGO JEDZENIA
+            // ==========================================
+            const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+            const { data: foodLogs } = await supabaseClient.from('food_log').select('*').gte('created_at', startOfDay.toISOString());
             
-            document.getElementById('water-progress').style.width = waterPercent + '%';
+            const categories = ['Śniadanie', 'II Śniadanie', 'Obiad', 'Podwieczorek', 'Kolacja'];
+            if (foodLogs && foodLogs.length > 0) {
+                categories.forEach(cat => {
+                    const mealsInCat = foodLogs.filter(f => f.meal_category === cat);
+                    const el = document.getElementById(`dash-${cat.replace(' ', '-')}`);
+                    if (el && mealsInCat.length > 0) {
+                        // Skleja nazwy jedzenia po przecinku (np. Owsianka, Kawa, Jabłko)
+                        el.innerText = mealsInCat.map(m => m.food_name).join(', ');
+                        el.style.color = "var(--accent-color)"; // Podświetla zjedzone na złoto!
+                    }
+                });
+            }
+
+            // ==========================================
+            // 3. NOWE: POBIERANIE DZISIEJSZEGO TRENINGU
+            // ==========================================
+            const { data: workouts } = await supabaseClient.from('workout_plan').select('*').eq('scheduled_date', today);
+            const workoutContainer = document.getElementById('dash-workout-list');
+            
+            if (workouts && workouts.length > 0) {
+                workoutContainer.innerHTML = ''; // Kasuje napis "Sprawdzanie planu"
+                workouts.forEach(w => {
+                    const icon = w.is_completed ? '✅' : '⏳';
+                    const color = w.is_completed ? 'var(--text-muted)' : 'var(--text-main)';
+                    const decoration = w.is_completed ? 'line-through' : 'none';
+                    
+                    workoutContainer.innerHTML += `
+                        <div class="list-item" style="padding: 10px 0;">
+                            <div class="item-info">
+                                <div class="item-text" style="text-decoration: ${decoration}; color: ${color};">
+                                    <h4 style="margin-bottom: 5px; font-size: 14px;">${icon} ${w.title}</h4>
+                                    <p style="margin:0; font-size: 12px; white-space: pre-wrap;">${w.details || 'Brak dodatkowego opisu'}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            } else {
+                // Jeśli nie ma zaplanowanych treningów na dziś
+                workoutContainer.innerHTML = '<div style="text-align: center; padding: 20px 0; color: var(--text-muted); font-size: 12px;">Brak treningu na dziś.<br>Czas na regenerację! 🛋️</div>';
+            }
+
+            // ==========================================
+            // 4. NOWE: POBIERANIE OSTATNIEGO POMIARU WAGI
+            // ==========================================
+            const { data: progress } = await supabaseClient.from('progress_history').select('*').order('created_at', { ascending: false }).limit(1).single();
+            if (progress) {
+                const pDate = new Date(progress.created_at).toLocaleDateString('pl-PL');
+                document.getElementById('dash-progress-card').innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="section-title" style="margin-bottom: 0;"><span class="stat-icon">📈</span> OSTATNIA WAGA</div>
+                        <button class="btn-outline" onclick="window.location.href='postepy.html'">DODAJ</button>
+                    </div>
+                    <div style="margin-top: 30px;">
+                        <div style="font-size: 36px; font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">${progress.weight} kg</div>
+                        <p style="font-size: 12px; color: var(--text-muted);">Aktualizacja: ${pDate}</p>
+                    </div>
+                `;
+            }
         }
 
         async function addWater(amount) {
@@ -250,34 +310,6 @@
         }
 
         fetchDashboardData();
-
-        // --- PŁYNNE PRZEJŚCIA MIĘDZY KARTAMI ---
-        document.querySelectorAll('nav a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                const target = this.getAttribute('href');
-                
-                // Jeśli link prowadzi do innej zakładki (pliku .html)
-                if(target && target.includes('.html')) {
-                    e.preventDefault(); // Zatrzymujemy natychmiastowy przeskok
-                    
-                    // Odpalamy animację wyjścia
-                    document.body.classList.add('page-exit');
-                    
-                    // Czekamy 300 milisekund i dopiero wtedy zmieniamy stronę
-                    setTimeout(() => {
-                        window.location.href = target;
-                    }, 300);
-                }
-            });
-        });
-    </script>
-    <script>
-        // Rejestracja Service Workera (PWA)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(() => {
-                console.log('Service Worker Zarejestrowany!');
-            });
-        }
     </script>
 </body>
 </html>
