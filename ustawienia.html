@@ -39,21 +39,21 @@
         @keyframes fadeout { from {bottom: 80px; opacity: 1;} to {bottom: 0; opacity: 0;} }
         @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
 
-                /* --- ANIMACJE SWIPE (MOBILNE) --- */
+                        /* --- BŁYSKAWICZNY SWIPE (MOBILNE) --- */
         body { 
-            animation: swipeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1); 
-            overflow-x: hidden; /* Zapobiega pojawianiu się paska przewijania z boku */
+            animation: swipeIn 0.2s cubic-bezier(0.25, 1, 0.5, 1); 
+            overflow-x: hidden; 
         }
         .page-exit { 
-            animation: swipeOut 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards !important; 
+            animation: swipeOut 0.15s cubic-bezier(0.25, 1, 0.5, 1) forwards !important; 
         }
         @keyframes swipeIn { 
-            0% { opacity: 0; transform: translateX(40px); } 
+            0% { opacity: 0; transform: translateX(20px); } 
             100% { opacity: 1; transform: translateX(0); } 
         }
         @keyframes swipeOut { 
             0% { opacity: 1; transform: translateX(0); } 
-            100% { opacity: 0; transform: translateX(-40px); } 
+            100% { opacity: 0; transform: translateX(-20px); } 
         }
     </style>
 </head>
