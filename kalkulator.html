@@ -48,20 +48,21 @@
 
         @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } .form-grid { grid-template-columns: 1fr; } .input-group.full { grid-column: span 1; } }
 
-        /* --- ANIMACJE PRZEJŚĆ --- */
-        body {
-            animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                /* --- ANIMACJE SWIPE (MOBILNE) --- */
+        body { 
+            animation: swipeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1); 
+            overflow-x: hidden; /* Zapobiega pojawianiu się paska przewijania z boku */
         }
-        .page-exit {
-            animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+        .page-exit { 
+            animation: swipeOut 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards !important; 
         }
-        @keyframes pageFadeIn {
-            0% { opacity: 0; transform: translateY(15px); }
-            100% { opacity: 1; transform: translateY(0); }
+        @keyframes swipeIn { 
+            0% { opacity: 0; transform: translateX(40px); } 
+            100% { opacity: 1; transform: translateX(0); } 
         }
-        @keyframes pageFadeOut {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-15px); }
+        @keyframes swipeOut { 
+            0% { opacity: 1; transform: translateX(0); } 
+            100% { opacity: 0; transform: translateX(-40px); } 
         }
     </style>
 </head>
