@@ -63,11 +63,22 @@
 
         @media (max-width: 900px) { body { padding-bottom: 80px; } header nav { display: none; } .mobile-nav { display: flex; } .history-item { flex-direction: column; align-items: flex-start; gap: 15px; } .history-data { width: 100%; justify-content: space-between; } }
 
-        /* Animacje przejść */
-        body { animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .page-exit { animation: pageFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important; }
-        @keyframes pageFadeIn { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
-        @keyframes pageFadeOut { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-15px); } }
+                /* --- ANIMACJE SWIPE (MOBILNE) --- */
+        body { 
+            animation: swipeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1); 
+            overflow-x: hidden; /* Zapobiega pojawianiu się paska przewijania z boku */
+        }
+        .page-exit { 
+            animation: swipeOut 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards !important; 
+        }
+        @keyframes swipeIn { 
+            0% { opacity: 0; transform: translateX(40px); } 
+            100% { opacity: 1; transform: translateX(0); } 
+        }
+        @keyframes swipeOut { 
+            0% { opacity: 1; transform: translateX(0); } 
+            100% { opacity: 0; transform: translateX(-40px); } 
+        }
     </style>
 </head>
 <body>
